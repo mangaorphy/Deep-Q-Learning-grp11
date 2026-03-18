@@ -17,13 +17,17 @@ from typing import Dict, List, Tuple
 import gymnasium as gym
 import numpy as np
 
-# Try to import and register ALE
-try:
-    import ale_py
-    gym.register_envs(ale_py)
-    print("✓ ALE environments registered successfully")
-except Exception as e:
-    print(f"Warning: ALE registration issue: {e}")
+# Detect if running on Kaggle
+ON_KAGGLE = os.path.exists("/kaggle")
+
+# Try to import and register ALE (for local/non-Kaggle usage)
+if not ON_KAGGLE:
+    try:
+        import ale_py
+        gym.register_envs(ale_py)
+        print("✓ ALE environments registered successfully")
+    except Exception as e:
+        print(f"Warning: ALE registration issue: {e}")
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
@@ -46,9 +50,9 @@ except ImportError:
 # Learning and environment parameters
 CONFIG = {
     # General settings
-    "env_name": "ALE/Tennis-v5",
-    "policy_type": "CnnPolicy",  # Options: "MlpPolicy" or "CnnPolicy"
-    "total_timesteps": 100000,
+    "env_name": "CartPole-v1" if ON_KAGGLE else "ALE/Tennis-v5",
+    "policy_type": "MlpPolicy" if ON_KAGGLE else "CnnPolicy",
+    "total_timesteps": 50000 if ON_KAGGLE else 100000,
     "seed": 42,
     
     # DQN Hyperparameters (CRITICAL: These are easily configurable for experiments)
@@ -75,15 +79,22 @@ CONFIG = {
 
 def make_env(env_name: str, seed: int = 42) -> gym.Env:
     """
-    Create and configure the Atari Tennis environment with preprocessing wrappers.
+    Create and configure the environment with appropriate preprocessing.
     
     Args:
-        env_name: Name of the environment (e.g., "ALE/Tennis-v5")
+        env_name: Name of the environment (e.g., "ALE/Tennis-v5" or "CartPole-v1")
         seed: Random seed for reproducibility
     
     Returns:
         Configured gymnasium environment with preprocessing wrappers
     """
+    # CartPole: Simple environment, no preprocessing needed
+    if env_name == "CartPole-v1":
+        env = gym.make(env_name, render_mode=None)
+        env.reset(seed=seed)
+        return env
+    
+    # Atari Tennis: Full preprocessing pipeline
     env = gym.make(env_name, render_mode=None, frameskip=1)
     env.reset(seed=seed)
     
@@ -399,7 +410,11 @@ def main():
     Main training script. Modify CONFIG at the top to change hyperparameters.
     """
     print("\n" + "="*70)
-    print("Deep Q-Network (DQN) Training for Atari Tennis")
+    print("Deep Q-Network (DQN) Training")
+    if ON_KAGGLE:
+        print("(Kaggle Mode - Using CartPole for fast training)")
+    else:
+        print("(Local Mode - Using Atari Tennis)")
     print("="*70)
     
     # Set random seeds for reproducibility
