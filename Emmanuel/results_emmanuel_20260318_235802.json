@@ -1,0 +1,212 @@
+[
+  {
+    "experiment": "Exp1_Baseline",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.571428571428573,
+    "max_reward": -22.0,
+    "min_reward": -24.0,
+    "std_reward": 0.7284313590846835,
+    "training_time": 158.91,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp1_baseline_mlp.zip",
+    "notes": "Standard defaults \u2014 reference for all comparisons."
+  },
+  {
+    "experiment": "Exp2_HighLR",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.001,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -24.0,
+    "max_reward": -24.0,
+    "min_reward": -24.0,
+    "std_reward": 0.0,
+    "training_time": 170.98,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp2_highlr_mlp.zip",
+    "notes": "High LR tends to learn fast early but can diverge/oscillate."
+  },
+  {
+    "experiment": "Exp3_VeryLowLR",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 1e-05,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.714285714285715,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.45175395145262565,
+    "training_time": 171.32,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp3_verylowlr_mlp.zip",
+    "notes": "Very slow weight updates; agent may not converge in 50k steps."
+  },
+  {
+    "experiment": "Exp4_LowGamma",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.9,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -24.0,
+    "max_reward": -24.0,
+    "min_reward": -24.0,
+    "std_reward": 0.0,
+    "training_time": 163.91,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp4_lowgamma_mlp.zip",
+    "notes": "Low gamma \u2192 agent cares mainly about immediate rewards."
+  },
+  {
+    "experiment": "Exp5_HighGamma",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.999,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -24.0,
+    "max_reward": -24.0,
+    "min_reward": -24.0,
+    "std_reward": 0.0,
+    "training_time": 157.12,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp5_highgamma_mlp.zip",
+    "notes": "Very high gamma \u2192 values future rewards heavily; slower convergence."
+  },
+  {
+    "experiment": "Exp6_LargeBatch",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0002,
+      "gamma": 0.99,
+      "batch_size": 128,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.857142857142858,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.34992710611188255,
+    "training_time": 247.08,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp6_largebatch_mlp.zip",
+    "notes": "Large batch \u2192 more stable gradients but fewer update steps per timestep."
+  },
+  {
+    "experiment": "Exp7_SmallBatch_HighLR",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0005,
+      "gamma": 0.99,
+      "batch_size": 16,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.857142857142858,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.34992710611188255,
+    "training_time": 133.45,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp7_smallbatch_highlr_mlp.zip",
+    "notes": "Small batch + high LR \u2192 noisy gradients; high variance in learning."
+  },
+  {
+    "experiment": "Exp8_AggressiveExploration",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.2,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.857142857142858,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.34992710611188255,
+    "training_time": 152.31,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp8_aggressiveexploration_mlp.zip",
+    "notes": "Agent keeps 20% random action rate; explores more, exploits less."
+  },
+  {
+    "experiment": "Exp9_GreedyExploitation",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.01,
+      "epsilon_decay": 20000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.857142857142858,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.34992710611188255,
+    "training_time": 157.47,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp9_greedyexploitation_mlp.zip",
+    "notes": "Fast decay to near-greedy policy; risk of premature convergence."
+  },
+  {
+    "experiment": "Exp10_SlowDecay_MidLR",
+    "policy": "MlpPolicy",
+    "hyperparams": {
+      "learning_rate": 0.00025,
+      "gamma": 0.995,
+      "batch_size": 64,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 100000
+    },
+    "total_timesteps": 50000,
+    "episodes": 7,
+    "mean_reward": -23.857142857142858,
+    "max_reward": -23.0,
+    "min_reward": -24.0,
+    "std_reward": 0.34992710611188255,
+    "training_time": 168.98,
+    "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp10_slowdecay_midlr_mlp.zip",
+    "notes": "Slow exploration decay; agent still explores heavily at 50k steps."
+  }
+]
