@@ -414,7 +414,10 @@ def main():
     if ON_KAGGLE:
         print("(Kaggle Mode - Using CartPole for fast training)")
     else:
-        print("(Local Mode - Using Atari Tennis)")
+        print("(Local/Colab Mode - Using Atari Tennis)")
+    print(f"Environment: {CONFIG['env_name']}")
+    print(f"Policy: {CONFIG['policy_type']}")
+    print(f"Total Timesteps: {CONFIG['total_timesteps']}")
     print("="*70)
     
     # Set random seeds for reproducibility
@@ -610,6 +613,15 @@ def run_all_experiments():
     
     print(f"CnnPolicy wins: {cnn_wins}/10")
     print(f"MlpPolicy wins: {mlp_wins}/10")
+    
+    # Show individual experiment results
+    print(f"\nDetailed Results:")
+    for exp in policy_comparison:
+        cnn_reward = exp.get("cnn_results", {}).get("mean_episode_reward", 0)
+        mlp_reward = exp.get("mlp_results", {}).get("mean_episode_reward", 0)
+        winner = exp.get("winner", "Tie")
+        print(f"  {exp['experiment']:30s} | CNN: {cnn_reward:8.2f} | MLP: {mlp_reward:8.2f} | Winner: {winner}")
+    
     print(f"\nResults saved to: results_{timestamp}.json\n")
 
 
