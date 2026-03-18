@@ -15,14 +15,15 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import gymnasium as gym
+import ale_py  # Required for ALE/Atari environments
 import numpy as np
 from stable_baselines3 import DQN
-
-# Support for Kaggle without ALE/Tennis
-KAGGLE_MODE = os.getenv("KAGGLE_MODE", "False").lower() == "true"
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
+
+# Register ALE environments with Gymnasium
+gym.register_envs(ale_py)
 
 # Try to import matplotlib for optional plotting
 try:
@@ -40,9 +41,9 @@ except ImportError:
 # Learning and environment parameters
 CONFIG = {
     # General settings
-    "env_name": "CartPole-v1" if KAGGLE_MODE else "ALE/Tennis-v5",
-    "policy_type": "MlpPolicy" if KAGGLE_MODE else "CnnPolicy",  # MlpPolicy for CartPole (simple), CnnPolicy for Atari
-    "total_timesteps": 50000 if KAGGLE_MODE else 100000,
+    "env_name": "ALE/Tennis-v5",
+    "policy_type": "CnnPolicy",  # Options: "MlpPolicy" or "CnnPolicy"
+    "total_timesteps": 100000,
     "seed": 42,
     
     # DQN Hyperparameters (CRITICAL: These are easily configurable for experiments)
@@ -69,23 +70,18 @@ CONFIG = {
 
 def make_env(env_name: str, seed: int = 42) -> gym.Env:
     """
-    Create and configure the environment with appropriate preprocessing.
+    Create and configure the Atari Tennis environment with preprocessing wrappers.
     
     Args:
-        env_name: Name of the environment (e.g., "ALE/Tennis-v5" or "CartPole-v1")
+        env_name: Name of the environment (e.g., "ALE/Tennis-v5")
         seed: Random seed for reproducibility
     
     Returns:
         Configured gymnasium environment with preprocessing wrappers
     """
-    env = gym.make(env_name, render_mode=None)
+    env = gym.make(env_name, render_mode=None, frameskip=1)
     env.reset(seed=seed)
     
-    # CartPole doesn't need Atari preprocessing (it's already simple state space)
-    if env_name == "CartPole-v1":
-        return env
-    
-    # Atari preprocessing (only for ALE environments)
     # Add Monitor wrapper for automatic episode tracking
     env = Monitor(env, info_keywords=("lives",))
     
@@ -399,8 +395,6 @@ def main():
     """
     print("\n" + "="*70)
     print("Deep Q-Network (DQN) Training for Atari Tennis")
-    if KAGGLE_MODE:
-        print("(Running in KAGGLE MODE - using CartPole environment)")
     print("="*70)
     
     # Set random seeds for reproducibility
