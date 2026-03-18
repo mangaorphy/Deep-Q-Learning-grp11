@@ -40,13 +40,13 @@ env/
 # Model files (large!)
 *.zip
 # models/*.zip
-dqn_model.zip
+# dqn_model.zip
 
 # Logs and outputs
-logs/
-*.log
-*.json
-training_results.png
+# logs/
+# *.log
+# *.json
+# training_results.png
 
 # Experiment results
 experiment_results_*.json
