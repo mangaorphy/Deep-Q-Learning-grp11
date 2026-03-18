@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Model files (large!)
+*.zip
+models/*.zip
+dqn_model.zip
+
+# Logs and outputs
+logs/
+*.log
+*.json
+training_results.png
+
+# Experiment results
+experiment_results_*.json
+run_experiments.py
+
+# Temporary files
+*.tmp
+tmp/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Large directories  
+.cache/
+wandb/
