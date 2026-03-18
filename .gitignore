@@ -38,7 +38,7 @@ env/
 .DS_Store
 
 # Model files (large!)
-*.zip
+# *.zip
 # models/*.zip
 # dqn_model.zip
 
