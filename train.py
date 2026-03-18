@@ -17,8 +17,23 @@ from typing import Dict, List, Tuple
 import gymnasium as gym
 import numpy as np
 
-# Detect if running on Kaggle
+# Detect if running on Kaggle or Google Colab
 ON_KAGGLE = os.path.exists("/kaggle")
+ON_COLAB = "google.colab" in str(get_ipython()) if 'get_ipython' in dir() else False
+
+# Mount Google Drive on Colab for persistent storage
+if ON_COLAB:
+    try:
+        from google.colab import drive
+        drive.mount('/content/drive', force_remount=True)
+        DRIVE_PATH = "/content/drive/MyDrive/DQN_Results"
+        os.makedirs(DRIVE_PATH, exist_ok=True)
+        print(f"✓ Google Drive mounted. Results will be saved to: {DRIVE_PATH}")
+    except Exception as e:
+        print(f"Warning: Could not mount Google Drive: {e}")
+        DRIVE_PATH = None
+else:
+    DRIVE_PATH = None
 
 # Try to import and register ALE (for local/non-Kaggle usage)
 if not ON_KAGGLE:
@@ -319,6 +334,7 @@ def save_experiment_log(
 ) -> str:
     """
     Save experiment results to a JSON file for later analysis.
+    On Colab, also saves to Google Drive.
     
     Args:
         stats: Training statistics
@@ -329,7 +345,13 @@ def save_experiment_log(
     Returns:
         Path to saved log file
     """
-    os.makedirs(log_dir, exist_ok=True)
+    # Use Google Drive on Colab, local storage otherwise
+    if ON_COLAB and DRIVE_PATH:
+        save_dir = DRIVE_PATH
+    else:
+        save_dir = log_dir
+    
+    os.makedirs(save_dir, exist_ok=True)
     
     # Create experiment record (exclude long arrays)
     experiment_record = {
@@ -341,7 +363,7 @@ def save_experiment_log(
     
     # Generate filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{log_dir}/experiment_{timestamp}.json"
+    filename = f"{save_dir}/experiment_{timestamp}.json"
     
     with open(filename, "w") as f:
         json.dump(experiment_record, f, indent=2)
@@ -520,7 +542,14 @@ EXPERIMENTS = [
 def run_all_experiments():
     """Run all 10 experiments with both CnnPolicy and MlpPolicy."""
     import json
-    os.makedirs("models", exist_ok=True)
+    
+    # Use Google Drive on Colab, local storage otherwise
+    if ON_COLAB and DRIVE_PATH:
+        models_dir = f"{DRIVE_PATH}/models"
+    else:
+        models_dir = "models"
+    
+    os.makedirs(models_dir, exist_ok=True)
     
     results = []
     policy_comparison = []
@@ -553,7 +582,7 @@ def run_all_experiments():
             
             # Set model path
             base_name = exp["name"].lower().replace(" ", "_")
-            CONFIG["model_save_path"] = f"models/{base_name}_{policy.lower()}.zip"
+            CONFIG["model_save_path"] = f"{models_dir}/{base_name}_{policy.lower()}.zip"
             
             try:
                 # Train
@@ -598,12 +627,18 @@ def run_all_experiments():
         
         policy_comparison.append(exp_comparison)
     
+    # Determine save location
+    if ON_COLAB and DRIVE_PATH:
+        results_dir = DRIVE_PATH
+    else:
+        results_dir = "."
+    
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    with open(f"results_{timestamp}.json", "w") as f:
+    results_file = f"{results_dir}/results_{timestamp}.json"
+    with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
     
-    # Print summary
     print(f"\n{'='*70}")
     print("EXPERIMENT SUMMARY")
     print(f"{'='*70}\n")
@@ -622,7 +657,9 @@ def run_all_experiments():
         winner = exp.get("winner", "Tie")
         print(f"  {exp['experiment']:30s} | CNN: {cnn_reward:8.2f} | MLP: {mlp_reward:8.2f} | Winner: {winner}")
     
-    print(f"\nResults saved to: results_{timestamp}.json\n")
+    if ON_COLAB and DRIVE_PATH:
+        print(f"\n✓ ALL RESULTS SAVED TO GOOGLE DRIVE: {DRIVE_PATH}")
+    print(f"\nResults saved to: {results_file}\n")
 
 
 if __name__ == "__main__":
