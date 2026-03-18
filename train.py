@@ -15,34 +15,12 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import gymnasium as gym
+import ale_py
 import numpy as np
 
-# Detect if running on Kaggle or Google Colab
-ON_KAGGLE = os.path.exists("/kaggle")
-ON_COLAB = "google.colab" in str(get_ipython()) if 'get_ipython' in dir() else False
-
-# Mount Google Drive on Colab for persistent storage
-if ON_COLAB:
-    try:
-        from google.colab import drive
-        drive.mount('/content/drive', force_remount=True)
-        DRIVE_PATH = "/content/drive/MyDrive/DQN_Results"
-        os.makedirs(DRIVE_PATH, exist_ok=True)
-        print(f"✓ Google Drive mounted. Results will be saved to: {DRIVE_PATH}")
-    except Exception as e:
-        print(f"Warning: Could not mount Google Drive: {e}")
-        DRIVE_PATH = None
-else:
-    DRIVE_PATH = None
-
-# Try to import and register ALE (for local/non-Kaggle usage)
-if not ON_KAGGLE:
-    try:
-        import ale_py
-        gym.register_envs(ale_py)
-        print("✓ ALE environments registered successfully")
-    except Exception as e:
-        print(f"Warning: ALE registration issue: {e}")
+# Register ALE environments for Atari Tennis
+gym.register_envs(ale_py)
+print("✓ ALE environments registered successfully")
 
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
@@ -65,9 +43,9 @@ except ImportError:
 # Learning and environment parameters
 CONFIG = {
     # General settings
-    "env_name": "CartPole-v1" if ON_KAGGLE else "CartPole-v1",
+    "env_name": "ALE/Tennis-v5",
     "policy_type": "MlpPolicy",
-    "total_timesteps": 50000 if ON_KAGGLE else 100000,
+    "total_timesteps": 100000,
     "seed": 42,
     
     # DQN Hyperparameters (CRITICAL: These are easily configurable for experiments)
@@ -94,22 +72,15 @@ CONFIG = {
 
 def make_env(env_name: str, seed: int = 42) -> gym.Env:
     """
-    Create and configure the environment with appropriate preprocessing.
+    Create and configure the Atari Tennis environment with preprocessing wrappers.
     
     Args:
-        env_name: Name of the environment (e.g., "ALE/Tennis-v5" or "CartPole-v1")
+        env_name: Name of the environment (e.g., "ALE/Tennis-v5")
         seed: Random seed for reproducibility
     
     Returns:
         Configured gymnasium environment with preprocessing wrappers
     """
-    # CartPole: Simple environment, no preprocessing needed
-    if env_name == "CartPole-v1":
-        env = gym.make(env_name, render_mode=None)
-        env.reset(seed=seed)
-        return env
-    
-    # Atari Tennis: Full preprocessing pipeline
     env = gym.make(env_name, render_mode=None, frameskip=1)
     env.reset(seed=seed)
     
@@ -117,23 +88,18 @@ def make_env(env_name: str, seed: int = 42) -> gym.Env:
     env = Monitor(env, info_keywords=("lives",))
     
     # Apply Atari preprocessing wrappers from gymnasium
-    # These wrappers handle:
-    # - Grayscale conversion
-    # - Frame resizing to 84x84
-    # - Frame stacking (4 frames) - important for CNNPolicy
-    # Note: frame_skip is NOT applied here since we set frameskip=1 above
     env = gym.wrappers.AtariPreprocessing(
         env,
         noop_max=30,
-        frame_skip=1,  # Already handled in gym.make() call above
+        frame_skip=1,
         screen_size=84,
         terminal_on_life_loss=True,
         grayscale_obs=True,
-        grayscale_newaxis=False,  # Don't add extra dimension for grayscale
+        grayscale_newaxis=False,
         scale_obs=True,
     )
     
-    # Stack frames for temporal information - creates (4, 84, 84) shape
+    # Stack frames for temporal information
     env = gym.wrappers.FrameStack(env, num_stack=4)
     
     return env
@@ -262,9 +228,9 @@ def train_model(
         exploration_fraction=hyperparameters["epsilon_decay"] / total_timesteps,
         exploration_initial_eps=hyperparameters["epsilon_start"],
         exploration_final_eps=hyperparameters["epsilon_end"],
-        verbose=1,  # Set to 1 for detailed output
+        verbose=1,  # Print detailed training output
         device="auto",
-        policy_kwargs={"normalize_images": False},  # Don't normalize channel-first images
+        policy_kwargs={"normalize_images": False},
     )
     
     # Train the model
@@ -334,7 +300,6 @@ def save_experiment_log(
 ) -> str:
     """
     Save experiment results to a JSON file for later analysis.
-    On Colab, also saves to Google Drive.
     
     Args:
         stats: Training statistics
@@ -345,15 +310,9 @@ def save_experiment_log(
     Returns:
         Path to saved log file
     """
-    # Use Google Drive on Colab, local storage otherwise
-    if ON_COLAB and DRIVE_PATH:
-        save_dir = DRIVE_PATH
-    else:
-        save_dir = log_dir
+    os.makedirs(log_dir, exist_ok=True)
     
-    os.makedirs(save_dir, exist_ok=True)
-    
-    # Create experiment record (exclude long arrays)
+    # Create experiment record
     experiment_record = {
         "timestamp": datetime.now().isoformat(),
         "config": {k: v for k, v in config.items() if k != "episode_rewards"},
@@ -363,7 +322,7 @@ def save_experiment_log(
     
     # Generate filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{save_dir}/experiment_{timestamp}.json"
+    filename = f"{log_dir}/experiment_{timestamp}.json"
     
     with open(filename, "w") as f:
         json.dump(experiment_record, f, indent=2)
@@ -432,11 +391,7 @@ def main():
     Main training script. Modify CONFIG at the top to change hyperparameters.
     """
     print("\n" + "="*70)
-    print("Deep Q-Network (DQN) Training")
-    if ON_KAGGLE:
-        print("(Kaggle Mode - Using CartPole for fast training)")
-    else:
-        print("(Local/Colab Mode - Using Atari Tennis)")
+    print("Deep Q-Network (DQN) Training for Atari Tennis")
     print(f"Environment: {CONFIG['env_name']}")
     print(f"Policy: {CONFIG['policy_type']}")
     print(f"Total Timesteps: {CONFIG['total_timesteps']}")
@@ -543,13 +498,7 @@ def run_all_experiments():
     """Run all 10 experiments with MlpPolicy only."""
     import json
     
-    # Use Google Drive on Colab, local storage otherwise
-    if ON_COLAB and DRIVE_PATH:
-        models_dir = f"{DRIVE_PATH}/models"
-    else:
-        models_dir = "models"
-    
-    os.makedirs(models_dir, exist_ok=True)
+    os.makedirs("models", exist_ok=True)
     
     results = []
     total_experiments = len(EXPERIMENTS)
@@ -572,7 +521,7 @@ def run_all_experiments():
         
         # Set model path
         base_name = exp["name"].lower().replace(" ", "_")
-        CONFIG["model_save_path"] = f"{models_dir}/{base_name}_mlp.zip"
+        CONFIG["model_save_path"] = f"models/{base_name}_mlp.zip"
         
         try:
             # Train
@@ -602,15 +551,9 @@ def run_all_experiments():
             CONFIG.clear()
             CONFIG.update(original_config)
     
-    # Determine save location
-    if ON_COLAB and DRIVE_PATH:
-        results_dir = DRIVE_PATH
-    else:
-        results_dir = "."
-    
     # Save results
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_file = f"{results_dir}/results_{timestamp}.json"
+    results_file = f"results_{timestamp}.json"
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
     
@@ -627,8 +570,6 @@ def run_all_experiments():
         else:
             print(f"  {result['experiment']:30s} | ERROR: {result['error']}")
     
-    if ON_COLAB and DRIVE_PATH:
-        print(f"\n✓ ALL RESULTS SAVED TO GOOGLE DRIVE: {DRIVE_PATH}")
     print(f"\nResults saved to: {results_file}\n")
 
 
