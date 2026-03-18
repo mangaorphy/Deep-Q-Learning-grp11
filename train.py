@@ -15,15 +15,20 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import gymnasium as gym
-import ale_py  # Required for ALE/Atari environments
 import numpy as np
+
+# Try to import and register ALE
+try:
+    import ale_py
+    gym.register_envs(ale_py)
+    print("✓ ALE environments registered successfully")
+except Exception as e:
+    print(f"Warning: ALE registration issue: {e}")
+
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
-
-# Register ALE environments with Gymnasium
-gym.register_envs(ale_py)
 
 # Try to import matplotlib for optional plotting
 try:
