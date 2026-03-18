@@ -45,7 +45,7 @@ CONFIG = {
     # General settings
     "env_name": "ALE/Tennis-v5",
     "policy_type": "MlpPolicy",
-    "total_timesteps": 100000,
+    "total_timesteps": 50000,  # Reduced from 100k to save memory
     "seed": 42,
     
     # DQN Hyperparameters (CRITICAL: These are easily configurable for experiments)
@@ -147,40 +147,14 @@ class RewardCallback(BaseCallback):
     Custom callback to track training progress and log rewards.
     """
     
-    def __init__(self, log_freq: int = 1000):
+    def __init__(self, log_freq: int = 5000):
         super().__init__()
         self.log_freq = log_freq
         self.episode_rewards = []
-        self.episode_lengths = []
         self.episode_count = 0
     
     def _on_step(self) -> bool:
         """Called after every environment step."""
-        # Try to get episode rewards from the environment
-        # Different environment types may track this differently
-        try:
-            # Check if Monitor wrapper is available
-            if hasattr(self.model.env, 'get_attr'):
-                # For vectorized environments
-                info = self.model.env.get_attr("episode")
-                if info and info[0] != self.episode_count:
-                    self.episode_count = info[0]
-                    if hasattr(self.model.env, 'return_queue') and len(self.model.env.return_queue) > 0:
-                        ep_reward, ep_length = self.model.env.return_queue[-1]
-                        self.episode_rewards.append(ep_reward)
-                        self.episode_lengths.append(ep_length)
-                        
-                        if len(self.episode_rewards) % self.log_freq == 0:
-                            mean_reward = np.mean(self.episode_rewards[-100:])
-                            print(
-                                f"Episodes: {self.episode_count} | "
-                                f"Timesteps: {self.num_timesteps} | "
-                                f"Mean Reward (last 100): {mean_reward:.2f}"
-                            )
-        except (AttributeError, IndexError):
-            # Fallback: silently ignore if episode tracking not available
-            pass
-        
         return True
 
 
@@ -254,10 +228,8 @@ def train_model(
         "training_time_seconds": training_time,
         "episodes_completed": callback.episode_count,
         "mean_episode_reward": float(np.mean(callback.episode_rewards)) if callback.episode_rewards else 0,
-        "mean_episode_length": float(np.mean(callback.episode_lengths)) if callback.episode_lengths else 0,
         "max_episode_reward": float(np.max(callback.episode_rewards)) if callback.episode_rewards else 0,
         "episode_rewards": callback.episode_rewards,
-        "episode_lengths": callback.episode_lengths,
     }
     
     return model, stats
@@ -276,11 +248,9 @@ def print_training_summary(stats: Dict, hyperparameters: Dict) -> None:
     print(f"{'='*70}")
     print(f"Total Timesteps: {stats['total_timesteps']:,}")
     print(f"Training Time: {stats['training_time_seconds']:.2f} seconds")
-    print(f"Episodes Completed: {stats['episodes_completed']}")
     print(f"\nPerformance Metrics:")
     print(f"  Mean Episode Reward: {stats['mean_episode_reward']:.2f}")
     print(f"  Max Episode Reward: {stats['max_episode_reward']:.2f}")
-    print(f"  Mean Episode Length: {stats['mean_episode_length']:.2f}")
     print(f"\nHyperparameters Used:")
     for key, value in hyperparameters.items():
         if key not in ["buffer_size", "target_update_interval", "learning_starts"]:
@@ -317,7 +287,7 @@ def save_experiment_log(
         "timestamp": datetime.now().isoformat(),
         "config": {k: v for k, v in config.items() if k != "episode_rewards"},
         "hyperparameters": hyperparameters,
-        "statistics": {k: v for k, v in stats.items() if k not in ["episode_rewards", "episode_lengths"]},
+        "statistics": {k: v for k, v in stats.items() if k != "episode_rewards"},
     }
     
     # Generate filename with timestamp
@@ -337,10 +307,10 @@ def save_experiment_log(
 
 def plot_training_results(stats: Dict, save_path: str = "training_results.png") -> None:
     """
-    Plot training results (episode rewards and lengths).
+    Plot training results (episode rewards).
     
     Args:
-        stats: Training statistics containing episode_rewards and episode_lengths
+        stats: Training statistics containing episode_rewards
         save_path: Path to save the plot
     """
     if not PLOTTING_AVAILABLE:
@@ -348,35 +318,24 @@ def plot_training_results(stats: Dict, save_path: str = "training_results.png") 
         return
     
     episode_rewards = stats.get("episode_rewards", [])
-    episode_lengths = stats.get("episode_lengths", [])
     
     if not episode_rewards:
         print("No episode data available for plotting.")
         return
     
-    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    
-    # Plot episode rewards
-    axes[0].plot(episode_rewards, alpha=0.6, label="Episode Reward")
-    axes[0].plot(
-        np.convolve(episode_rewards, np.ones(100) / 100, mode="valid"),
-        label="100-episode Moving Average",
-        linewidth=2,
-    )
-    axes[0].set_xlabel("Episode")
-    axes[0].set_ylabel("Reward")
-    axes[0].set_title("Training Progress: Episode Rewards")
-    axes[0].legend()
-    axes[0].grid(True, alpha=0.3)
-    
-    # Plot episode lengths
-    axes[1].plot(episode_lengths, alpha=0.6, label="Episode Length", color="orange")
-    axes[1].set_xlabel("Episode")
-    axes[1].set_ylabel("Steps")
-    axes[1].set_title("Training Progress: Episode Lengths")
-    axes[1].legend()
-    axes[1].grid(True, alpha=0.3)
-    
+    plt.figure(figsize=(12, 5))
+    plt.plot(episode_rewards, alpha=0.6, label="Episode Reward")
+    if len(episode_rewards) > 100:
+        plt.plot(
+            np.convolve(episode_rewards, np.ones(100) / 100, mode="valid"),
+            label="100-episode Moving Average",
+            linewidth=2,
+        )
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.title("Training Progress: Episode Rewards")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     print(f"✓ Training plot saved to: {save_path}")
