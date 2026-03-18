@@ -39,7 +39,7 @@ env/
 
 # Model files (large!)
 *.zip
-models/*.zip
+# models/*.zip
 dqn_model.zip
 
 # Logs and outputs
