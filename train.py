@@ -65,8 +65,8 @@ except ImportError:
 # Learning and environment parameters
 CONFIG = {
     # General settings
-    "env_name": "CartPole-v1" if ON_KAGGLE else "ALE/Tennis-v5",
-    "policy_type": "MlpPolicy" if ON_KAGGLE else "CnnPolicy",
+    "env_name": "CartPole-v1" if ON_KAGGLE else "CartPole-v1",
+    "policy_type": "MlpPolicy",
     "total_timesteps": 50000 if ON_KAGGLE else 100000,
     "seed": 42,
     
@@ -540,7 +540,7 @@ EXPERIMENTS = [
 
 
 def run_all_experiments():
-    """Run all 10 experiments with both CnnPolicy and MlpPolicy."""
+    """Run all 10 experiments with MlpPolicy only."""
     import json
     
     # Use Google Drive on Colab, local storage otherwise
@@ -552,80 +552,55 @@ def run_all_experiments():
     os.makedirs(models_dir, exist_ok=True)
     
     results = []
-    policy_comparison = []
-    policies = ["CnnPolicy", "MlpPolicy"]
-    total_experiments = len(EXPERIMENTS) * len(policies)
+    total_experiments = len(EXPERIMENTS)
     current = 0
     
     for exp in EXPERIMENTS:
-        exp_comparison = {
-            "experiment": exp["name"],
-            "config": exp["config_changes"],
-            "cnn_results": {},
-            "mlp_results": {},
-        }
+        current += 1
+        print(f"\n{'='*70}")
+        print(f"Running Experiment {current}/{total_experiments}")
+        print(f"Experiment: {exp['name']}")
+        print(f"Policy: MlpPolicy")
+        print(f"{'='*70}\n")
         
-        for policy in policies:
-            current += 1
-            print(f"\n{'='*70}")
-            print(f"Running Experiment {current}/{total_experiments}")
-            print(f"Experiment: {exp['name']}")
-            print(f"Policy: {policy}")
-            print(f"{'='*70}\n")
+        # Save original config
+        original_config = CONFIG.copy()
+        
+        # Update config with experiment changes
+        CONFIG.update(exp["config_changes"])
+        CONFIG["policy_type"] = "MlpPolicy"
+        
+        # Set model path
+        base_name = exp["name"].lower().replace(" ", "_")
+        CONFIG["model_save_path"] = f"{models_dir}/{base_name}_mlp.zip"
+        
+        try:
+            # Train
+            model, stats = main()
             
-            # Save original config
-            original_config = CONFIG.copy()
-            
-            # Update config with experiment changes
-            CONFIG.update(exp["config_changes"])
-            CONFIG["policy_type"] = policy
-            
-            # Set model path
-            base_name = exp["name"].lower().replace(" ", "_")
-            CONFIG["model_save_path"] = f"{models_dir}/{base_name}_{policy.lower()}.zip"
-            
-            try:
-                # Train
-                model, stats = main()
+            # Store results
+            result = {
+                "experiment": exp["name"],
+                "policy": "MlpPolicy",
+                "config": exp["config_changes"],
+                "mean_reward": stats["mean_episode_reward"],
+                "max_reward": stats["max_episode_reward"],
+                "episodes": stats["episodes_completed"],
+                "time": stats["training_time_seconds"],
+            }
+            results.append(result)
                 
-                # Store results
-                result = {
-                    "experiment": exp["name"],
-                    "policy": policy,
-                    "config": exp["config_changes"],
-                    "mean_reward": stats["mean_episode_reward"],
-                    "max_reward": stats["max_episode_reward"],
-                    "episodes": stats["episodes_completed"],
-                    "time": stats["training_time_seconds"],
-                }
-                results.append(result)
-                
-                # Store for comparison
-                if policy == "CnnPolicy":
-                    exp_comparison["cnn_results"] = stats
-                else:
-                    exp_comparison["mlp_results"] = stats
-                    
-            except Exception as e:
-                print(f"\n✗ Failed: {e}")
-                results.append({
-                    "experiment": exp["name"],
-                    "policy": policy,
-                    "error": str(e)
-                })
-            finally:
-                # Restore config
-                CONFIG.clear()
-                CONFIG.update(original_config)
-        
-        # Determine winner
-        if exp_comparison["cnn_results"] and exp_comparison["mlp_results"]:
-            cnn_reward = exp_comparison["cnn_results"].get("mean_episode_reward", 0)
-            mlp_reward = exp_comparison["mlp_results"].get("mean_episode_reward", 0)
-            exp_comparison["winner"] = "CnnPolicy" if cnn_reward > mlp_reward else "MlpPolicy"
-            exp_comparison["reward_diff"] = abs(cnn_reward - mlp_reward)
-        
-        policy_comparison.append(exp_comparison)
+        except Exception as e:
+            print(f"\n✗ Failed: {e}")
+            results.append({
+                "experiment": exp["name"],
+                "policy": "MlpPolicy",
+                "error": str(e)
+            })
+        finally:
+            # Restore config
+            CONFIG.clear()
+            CONFIG.update(original_config)
     
     # Determine save location
     if ON_COLAB and DRIVE_PATH:
@@ -643,19 +618,14 @@ def run_all_experiments():
     print("EXPERIMENT SUMMARY")
     print(f"{'='*70}\n")
     
-    cnn_wins = sum(1 for c in policy_comparison if c.get("winner") == "CnnPolicy")
-    mlp_wins = sum(1 for c in policy_comparison if c.get("winner") == "MlpPolicy")
-    
-    print(f"CnnPolicy wins: {cnn_wins}/10")
-    print(f"MlpPolicy wins: {mlp_wins}/10")
-    
     # Show individual experiment results
-    print(f"\nDetailed Results:")
-    for exp in policy_comparison:
-        cnn_reward = exp.get("cnn_results", {}).get("mean_episode_reward", 0)
-        mlp_reward = exp.get("mlp_results", {}).get("mean_episode_reward", 0)
-        winner = exp.get("winner", "Tie")
-        print(f"  {exp['experiment']:30s} | CNN: {cnn_reward:8.2f} | MLP: {mlp_reward:8.2f} | Winner: {winner}")
+    print(f"Individual Experiment Results:")
+    for result in results:
+        if "error" not in result:
+            mean_reward = result.get("mean_reward", 0)
+            print(f"  {result['experiment']:30s} | Mean Reward: {mean_reward:8.2f}")
+        else:
+            print(f"  {result['experiment']:30s} | ERROR: {result['error']}")
     
     if ON_COLAB and DRIVE_PATH:
         print(f"\n✓ ALL RESULTS SAVED TO GOOGLE DRIVE: {DRIVE_PATH}")
