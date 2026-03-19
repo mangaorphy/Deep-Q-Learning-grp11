@@ -51,7 +51,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 ENV_NAME       = "ALE/Tennis-v5"
 POLICY_TYPE    = "MlpPolicy"          # Fixed: MLP only
-TOTAL_TIMESTEPS_DEFAULT = 100_000      # Per-experiment: increased for Atari learning
+TOTAL_TIMESTEPS_DEFAULT = 50_000       # Reduced for Colab GPU memory
 SEED           = 42
 
 # ============================================================================
@@ -222,15 +222,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,      # Moderate LR for Atari stability
             "gamma"         : 0.99,      # Standard discount factor
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,   # Large replay buffer for Atari
+            "buffer_size"   : 100_000,   # Reduced from 500k for Colab GPU
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,      # Proper exploration decay
-            "epsilon_decay" : 100_000,   # Gradual decay over timesteps
-            "target_update_interval": 10_000,  # Update Q target less frequently
-            "learning_starts": 50_000,   # Let agent explore before learning
+            "epsilon_decay" : 50_000,    # Reduced for 50k timesteps
+            "target_update_interval": 5_000,   # Update more frequently
+            "learning_starts": 10_000,   # Start training earlier
         },
-        "total_timesteps": 100_000,
-        "notes": "Optimized baseline with Atari-tuned hyperparameters.",
+        "total_timesteps": 50_000,
+        "notes": "Optimized baseline with Colab-compatible hyperparameters.",
     },
     {
         "name": "Exp2_LowerLR",
@@ -238,14 +238,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 1e-4,      # Lower LR for stability
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Lower learning rate for more conservative updates.",
     },
     {
@@ -254,14 +254,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 1e-3,      # Higher LR for faster learning
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Higher learning rate for faster convergence.",
     },
     {
@@ -270,14 +270,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 64,        # Larger batch for stability
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Larger batch size (64) for gradient stability.",
     },
     {
@@ -286,14 +286,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 16,        # Smaller batch for faster updates
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Smaller batch size (16) for faster individual updates.",
     },
     {
@@ -302,14 +302,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.999,     # Higher discount factor
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Higher gamma (0.999) emphasizes long-term rewards.",
     },
     {
@@ -318,14 +318,14 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.95,      # Lower discount factor
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
+        "total_timesteps": 50_000,
         "notes": "Lower gamma (0.95) prioritizes immediate rewards.",
     },
     {
@@ -334,15 +334,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,    # Faster epsilon decay
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 25_000,    # Faster epsilon decay
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
-        "notes": "Faster epsilon decay (50k) for quicker exploitation.",
+        "total_timesteps": 50_000,
+        "notes": "Faster epsilon decay (25k) for quicker exploitation.",
     },
     {
         "name": "Exp9_SlowExploration",
@@ -350,15 +350,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 150_000,   # Slower epsilon decay
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 75_000,    # Slower epsilon decay
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 100_000,
-        "notes": "Slower epsilon decay (150k) for extended exploration.",
+        "total_timesteps": 50_000,
+        "notes": "Slower epsilon decay (75k) for extended exploration.",
     },
     {
         "name": "Exp10_ExtendedTraining",
@@ -366,15 +366,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : 100_000,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.01,
-            "epsilon_decay" : 100_000,
-            "target_update_interval": 10_000,
-            "learning_starts": 50_000,
+            "epsilon_decay" : 50_000,
+            "target_update_interval": 5_000,
+            "learning_starts": 10_000,
         },
-        "total_timesteps": 200_000,     # Double training time
-        "notes": "Extended training (200k timesteps) for deeper learning.",
+        "total_timesteps": 100_000,     # Extended: 2x the others
+        "notes": "Extended training (100k timesteps) for deeper learning.",
     },
 ]
 
