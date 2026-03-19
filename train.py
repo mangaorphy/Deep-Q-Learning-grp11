@@ -20,6 +20,10 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import gymnasium as gym
 import ale_py
+import os
+
+# Force CPU on Kaggle (P100 CUDA compatibility issue)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 gym.register_envs(ale_py)
 
