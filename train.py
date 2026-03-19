@@ -1,93 +1,72 @@
 """
-Deep Q-Network (DQN) Training Script for Atari Tennis
-======================================================
-A clean, modular, and production-quality training script for DQN agents
-using Stable Baselines3 and Gymnasium.
+Deep Q-Network (DQN) Training Script - Your Experiments
+=======================================================
+MlpPolicy only | 10 hyperparameter experiments | ALE/Tennis-v5
 
-This script is designed for easy experimentation with multiple hyperparameter
-configurations. Each group member can easily run 10 different experiments.
+Each experiment is saved individually to your models/
+Results are logged to your logs/ and a summary JSON is written at the end.
+
+Member: Your Name
 """
 
 import os
 import json
+import time
+import gc
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
+import numpy as np
 import gymnasium as gym
 import ale_py
-import numpy as np
 
-# Register ALE environments for Atari Tennis
 gym.register_envs(ale_py)
-print("✓ ALE environments registered successfully")
 
 from stable_baselines3 import DQN
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-# Try to import matplotlib for optional plotting
 try:
     import matplotlib.pyplot as plt
     PLOTTING_AVAILABLE = True
 except ImportError:
     PLOTTING_AVAILABLE = False
-    print("Warning: matplotlib not available. Plotting disabled.")
-
 
 # ============================================================================
-# CONFIGURATION SECTION - MODIFY HERE FOR EXPERIMENTATION
+# PATHS  (all outputs stay inside current directory)
 # ============================================================================
 
-# Learning and environment parameters
-CONFIG = {
-    # General settings
-    "env_name": "ALE/Tennis-v5",
-    "policy_type": "MlpPolicy",
-    "total_timesteps": 50000,  # Reduced from 100k to save memory
-    "seed": 42,
-    
-    # DQN Hyperparameters (CRITICAL: These are easily configurable for experiments)
-    "learning_rate": 1e-4,
-    "gamma": 0.99,          # Discount factor
-    "batch_size": 32,
-    "buffer_size": 100000,
-    "epsilon_start": 1.0,   # Initial exploration rate
-    "epsilon_end": 0.05,    # Final exploration rate
-    "epsilon_decay": 50000, # Timesteps to decay epsilon
-    "target_update_interval": 1000,
-    "learning_starts": 1000,
-    
-    # Output settings
-    "model_save_path": "dqn_model.zip",
-    "log_dir": "logs",
-    "create_experiment_log": True,
-}
+BASE_DIR   = Path(__file__).parent          # .../Deep-Q-Learning-grp11/
+MODELS_DIR = BASE_DIR / "models"
+LOGS_DIR   = BASE_DIR / "logs"
 
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
-# ENVIRONMENT SETUP
+# ENVIRONMENT CONFIGURATION
 # ============================================================================
 
-def make_env(env_name: str, seed: int = 42) -> gym.Env:
+ENV_NAME       = "ALE/Tennis-v5"
+POLICY_TYPE    = "MlpPolicy"          # Fixed: MLP only
+TOTAL_TIMESTEPS_DEFAULT = 100_000      # Per-experiment: increased for Atari learning
+SEED           = 42
+
+# ============================================================================
+# ENVIRONMENT FACTORY
+# ============================================================================
+
+def make_env(seed: int = SEED) -> gym.Env:
     """
-    Create and configure the Atari Tennis environment with preprocessing wrappers.
-    
-    Args:
-        env_name: Name of the environment (e.g., "ALE/Tennis-v5")
-        seed: Random seed for reproducibility
-    
-    Returns:
-        Configured gymnasium environment with preprocessing wrappers
+    Build the Atari Tennis env with AtariPreprocessing + FrameStack.
+    Observation shape after wrappers: (4, 84, 84) — SB3 MlpPolicy
+    auto-flattens this via FlattenExtractor.
     """
-    env = gym.make(env_name, render_mode=None, frameskip=1)
+    env = gym.make(ENV_NAME, render_mode=None, frameskip=1)
     env.reset(seed=seed)
-    
-    # Add Monitor wrapper for automatic episode tracking
     env = Monitor(env, info_keywords=("lives",))
-    
-    # Apply Atari preprocessing wrappers from gymnasium
     env = gym.wrappers.AtariPreprocessing(
         env,
         noop_max=30,
@@ -98,439 +77,398 @@ def make_env(env_name: str, seed: int = 42) -> gym.Env:
         grayscale_newaxis=False,
         scale_obs=True,
     )
-    
-    # Stack frames for temporal information
     env = gym.wrappers.FrameStack(env, num_stack=4)
-    
     return env
 
-
-def validate_environment(env: gym.Env, policy_type: str) -> None:
-    """
-    Validate environment configuration and compatibility with policy type.
-    
-    Args:
-        env: The gymnasium environment to validate
-        policy_type: Policy type ("MlpPolicy" or "CnnPolicy")
-    
-    Raises:
-        ValueError: If environment is incompatible with policy type
-    """
-    obs_space = env.observation_space
-    action_space = env.action_space
-    
-    print(f"\n{'='*70}")
-    print(f"Environment Configuration")
-    print(f"{'='*70}")
-    print(f"Observation Space: {obs_space}")
-    print(f"Action Space: {action_space}")
-    
-    # CNNPolicy requires 3 or 4D observation space (batch, height, width, channels)
-    if policy_type == "CnnPolicy":
-        if len(obs_space.shape) < 3:
-            raise ValueError(
-                f"CNNPolicy requires at least 3D observation space. "
-                f"Got: {obs_space.shape}"
-            )
-    
-    print(f"Policy Type: {policy_type}")
-    print(f"✓ Environment is compatible with {policy_type}")
-    print(f"{'='*70}\n")
-
-
 # ============================================================================
-# TRAINING
+# REWARD CALLBACK
 # ============================================================================
 
-class RewardCallback(BaseCallback):
-    """
-    Custom callback to track training progress and log rewards.
-    """
-    
-    def __init__(self, log_freq: int = 5000):
+class RewardLogger(BaseCallback):
+    """Tracks episode rewards and lengths during training."""
+
+    def __init__(self, log_freq: int = 5_000):
         super().__init__()
-        self.log_freq = log_freq
-        self.episode_rewards = []
-        self.episode_count = 0
-    
+        self.log_freq       = log_freq
+        self.episode_rewards: List[float] = []
+        self.episode_lengths: List[int]   = []
+        self._current_rewards: Dict       = {}
+
     def _on_step(self) -> bool:
-        """Called after every environment step."""
+        infos = self.locals.get("infos", [])
+        for info in infos:
+            if "episode" in info:
+                self.episode_rewards.append(info["episode"]["r"])
+                self.episode_lengths.append(info["episode"]["l"])
         return True
 
+# ============================================================================
+# TRAINING FUNCTION
+# ============================================================================
 
-def train_model(
-    env: gym.Env,
-    policy_type: str,
-    total_timesteps: int,
-    hyperparameters: Dict,
-    model_save_path: str = "dqn_model.zip",
-) -> Tuple[DQN, Dict]:
+def train_experiment(
+    exp_name: str,
+    hyperparams: Dict,
+    total_timesteps: int = TOTAL_TIMESTEPS_DEFAULT,
+) -> Dict:
     """
-    Train a DQN agent on the provided environment.
-    
-    Args:
-        env: Gymnasium environment
-        policy_type: "MlpPolicy" or "CnnPolicy"
-        total_timesteps: Total number of environment steps to train
-        hyperparameters: Dictionary of DQN hyperparameters
-        model_save_path: Path to save the trained model
-    
-    Returns:
-        Tuple of (trained model, training statistics)
+    Train one DQN experiment with MlpPolicy and given hyperparameters.
+
+    Returns a dict with results suitable for the summary table.
     """
     print(f"\n{'='*70}")
-    print(f"Training Configuration")
+    print(f"  EXPERIMENT : {exp_name}")
+    print(f"  Policy     : {POLICY_TYPE}")
+    print(f"  Timesteps  : {total_timesteps:,}")
+    print(f"  Params     : {hyperparams}")
     print(f"{'='*70}")
-    print(f"Total Timesteps: {total_timesteps:,}")
-    print(f"Policy Type: {policy_type}")
-    
-    print(f"\nHyperparameters:")
-    for key, value in hyperparameters.items():
-        print(f"  {key}: {value}")
-    print(f"{'='*70}\n")
-    
-    # Create DQN model with specified hyperparameters
+
+    env = make_env(seed=SEED)
+
     model = DQN(
-        policy_type,
+        POLICY_TYPE,
         env,
-        learning_rate=hyperparameters["learning_rate"],
-        gamma=hyperparameters["gamma"],
-        batch_size=hyperparameters["batch_size"],
-        buffer_size=hyperparameters["buffer_size"],
-        target_update_interval=hyperparameters["target_update_interval"],
-        learning_starts=hyperparameters["learning_starts"],
-        exploration_fraction=hyperparameters["epsilon_decay"] / total_timesteps,
-        exploration_initial_eps=hyperparameters["epsilon_start"],
-        exploration_final_eps=hyperparameters["epsilon_end"],
-        verbose=1,  # Print detailed training output
-        device="auto",
-        policy_kwargs={"normalize_images": False},
+        learning_rate           = hyperparams["learning_rate"],
+        gamma                   = hyperparams["gamma"],
+        batch_size              = hyperparams["batch_size"],
+        buffer_size             = hyperparams.get("buffer_size", 100_000),
+        target_update_interval  = hyperparams.get("target_update_interval", 1_000),
+        learning_starts         = hyperparams.get("learning_starts", 1_000),
+        exploration_fraction    = hyperparams.get("epsilon_decay", 50_000) / total_timesteps,
+        exploration_initial_eps = hyperparams.get("epsilon_start", 1.0),
+        exploration_final_eps   = hyperparams["epsilon_end"],
+        verbose                 = 1,
+        device                  = "auto",
+        policy_kwargs           = {"normalize_images": False},
     )
-    
-    # Train the model
-    print("Starting training...")
-    start_time = datetime.now()
-    
-    callback = RewardCallback(log_freq=1000)
+
+    callback = RewardLogger(log_freq=1_000)
+
+    t_start = time.time()
     model.learn(total_timesteps=total_timesteps, callback=callback, progress_bar=True)
-    
-    end_time = datetime.now()
-    training_time = (end_time - start_time).total_seconds()
-    
-    # Save the trained model
-    os.makedirs(os.path.dirname(model_save_path) or ".", exist_ok=True)
-    model.save(model_save_path)
-    print(f"\n✓ Model saved to: {model_save_path}")
-    
-    # Compile training statistics
-    stats = {
+    elapsed = time.time() - t_start
+
+    # ---- save model --------------------------------------------------------
+    safe_name   = exp_name.lower().replace(" ", "_")
+    model_path  = MODELS_DIR / f"{safe_name}_mlp.zip"
+    model.save(str(model_path))
+    print(f"  ✓ Model saved → {model_path}")
+
+    # ---- collect stats -----------------------------------------------------
+    rewards = callback.episode_rewards
+    result = {
+        "experiment"    : exp_name,
+        "policy"        : POLICY_TYPE,
+        "hyperparams"   : hyperparams,
         "total_timesteps": total_timesteps,
-        "training_time_seconds": training_time,
-        "episodes_completed": callback.episode_count,
-        "mean_episode_reward": float(np.mean(callback.episode_rewards)) if callback.episode_rewards else 0,
-        "max_episode_reward": float(np.max(callback.episode_rewards)) if callback.episode_rewards else 0,
-        "episode_rewards": callback.episode_rewards,
+        "episodes"      : len(rewards),
+        "mean_reward"   : float(np.mean(rewards))   if rewards else 0.0,
+        "max_reward"    : float(np.max(rewards))     if rewards else 0.0,
+        "min_reward"    : float(np.min(rewards))     if rewards else 0.0,
+        "std_reward"    : float(np.std(rewards))     if rewards else 0.0,
+        "training_time" : round(elapsed, 2),
+        "model_path"    : str(model_path),
+        "episode_rewards": rewards,
     }
-    
-    return model, stats
 
+    # ---- save individual log -----------------------------------------------
+    log_path = LOGS_DIR / f"{safe_name}.json"
+    with open(log_path, "w") as f:
+        log_data = {k: v for k, v in result.items() if k != "episode_rewards"}
+        json.dump(log_data, f, indent=2)
+    print(f"  ✓ Log saved  → {log_path}")
 
-def print_training_summary(stats: Dict, hyperparameters: Dict) -> None:
-    """
-    Print a formatted summary of training results.
-    
-    Args:
-        stats: Training statistics dictionary
-        hyperparameters: Hyperparameters used for training
-    """
-    print(f"\n{'='*70}")
-    print(f"Training Summary")
-    print(f"{'='*70}")
-    print(f"Total Timesteps: {stats['total_timesteps']:,}")
-    print(f"Training Time: {stats['training_time_seconds']:.2f} seconds")
-    print(f"\nPerformance Metrics:")
-    print(f"  Mean Episode Reward: {stats['mean_episode_reward']:.2f}")
-    print(f"  Max Episode Reward: {stats['max_episode_reward']:.2f}")
-    print(f"\nHyperparameters Used:")
-    for key, value in hyperparameters.items():
-        if key not in ["buffer_size", "target_update_interval", "learning_starts"]:
-            print(f"  {key}: {value}")
-    print(f"{'='*70}\n")
+    # ---- quick plot (optional) ----------------------------------------------
+    if PLOTTING_AVAILABLE and rewards:
+        _plot_rewards(rewards, exp_name, safe_name)
 
-
-# ============================================================================
-# EXPERIMENT LOGGING
-# ============================================================================
-
-def save_experiment_log(
-    stats: Dict,
-    hyperparameters: Dict,
-    config: Dict,
-    log_dir: str = "logs",
-) -> str:
-    """
-    Save experiment results to a JSON file for later analysis.
-    
-    Args:
-        stats: Training statistics
-        hyperparameters: Hyperparameters used
-        config: Full configuration
-        log_dir: Directory to save logs
-    
-    Returns:
-        Path to saved log file
-    """
-    os.makedirs(log_dir, exist_ok=True)
-    
-    # Create experiment record
-    experiment_record = {
-        "timestamp": datetime.now().isoformat(),
-        "config": {k: v for k, v in config.items() if k != "episode_rewards"},
-        "hyperparameters": hyperparameters,
-        "statistics": {k: v for k, v in stats.items() if k != "episode_rewards"},
-    }
-    
-    # Generate filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{log_dir}/experiment_{timestamp}.json"
-    
-    with open(filename, "w") as f:
-        json.dump(experiment_record, f, indent=2)
-    
-    print(f"✓ Experiment log saved to: {filename}")
-    return filename
-
-
-# ============================================================================
-# PLOTTING (BONUS)
-# ============================================================================
-
-def plot_training_results(stats: Dict, save_path: str = "training_results.png") -> None:
-    """
-    Plot training results (episode rewards).
-    
-    Args:
-        stats: Training statistics containing episode_rewards
-        save_path: Path to save the plot
-    """
-    if not PLOTTING_AVAILABLE:
-        print("Warning: matplotlib not available. Skipping plot generation.")
-        return
-    
-    episode_rewards = stats.get("episode_rewards", [])
-    
-    if not episode_rewards:
-        print("No episode data available for plotting.")
-        return
-    
-    plt.figure(figsize=(12, 5))
-    plt.plot(episode_rewards, alpha=0.6, label="Episode Reward")
-    if len(episode_rewards) > 100:
-        plt.plot(
-            np.convolve(episode_rewards, np.ones(100) / 100, mode="valid"),
-            label="100-episode Moving Average",
-            linewidth=2,
-        )
-    plt.xlabel("Episode")
-    plt.ylabel("Reward")
-    plt.title("Training Progress: Episode Rewards")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    print(f"✓ Training plot saved to: {save_path}")
-
-
-# ============================================================================
-# MAIN SCRIPT
-# ============================================================================
-
-def main():
-    """
-    Main training script. Modify CONFIG at the top to change hyperparameters.
-    """
-    print("\n" + "="*70)
-    print("Deep Q-Network (DQN) Training for Atari Tennis")
-    print(f"Environment: {CONFIG['env_name']}")
-    print(f"Policy: {CONFIG['policy_type']}")
-    print(f"Total Timesteps: {CONFIG['total_timesteps']}")
-    print("="*70)
-    
-    # Set random seeds for reproducibility
-    np.random.seed(CONFIG["seed"])
-    
-    # Create environment
-    print("\nCreating environment...")
-    env = make_env(CONFIG["env_name"], seed=CONFIG["seed"])
-    
-    # Validate environment
-    validate_environment(env, CONFIG["policy_type"])
-    
-    # Extract hyperparameters
-    hyperparameters = {
-        "learning_rate": CONFIG["learning_rate"],
-        "gamma": CONFIG["gamma"],
-        "batch_size": CONFIG["batch_size"],
-        "buffer_size": CONFIG["buffer_size"],
-        "epsilon_start": CONFIG["epsilon_start"],
-        "epsilon_end": CONFIG["epsilon_end"],
-        "epsilon_decay": CONFIG["epsilon_decay"],
-        "target_update_interval": CONFIG["target_update_interval"],
-        "learning_starts": CONFIG["learning_starts"],
-    }
-    
-    # Train model
-    model, stats = train_model(
-        env=env,
-        policy_type=CONFIG["policy_type"],
-        total_timesteps=CONFIG["total_timesteps"],
-        hyperparameters=hyperparameters,
-        model_save_path=CONFIG["model_save_path"],
-    )
-    
-    # Print summary
-    print_training_summary(stats, hyperparameters)
-    
-    # Save experiment log
-    if CONFIG["create_experiment_log"]:
-        save_experiment_log(stats, hyperparameters, CONFIG, CONFIG["log_dir"])
-    
-    # Plot results (bonus)
-    plot_training_results(stats, save_path="training_results.png")
-    
-    # Close environment
     env.close()
-    
-    print("✓ Training completed successfully!")
-    return model, stats
+    del env
+    del model
+    gc.collect()  # Force garbage collection to free memory
+    time.sleep(1)  # Brief pause for OS to handle freed memory
+    return result
+
+
+def _plot_rewards(rewards: List[float], title: str, safe_name: str) -> None:
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(rewards, alpha=0.5, color="steelblue", label="Episode reward")
+    if len(rewards) >= 20:
+        window = min(50, len(rewards) // 5)
+        ma = np.convolve(rewards, np.ones(window) / window, mode="valid")
+        ax.plot(range(window - 1, len(rewards)), ma,
+                color="darkorange", linewidth=2,
+                label=f"{window}-ep moving avg")
+    ax.set_xlabel("Episode")
+    ax.set_ylabel("Reward")
+    ax.set_title(f"[Your Experiments] {title}")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plot_path = LOGS_DIR / f"{safe_name}_rewards.png"
+    plt.savefig(plot_path, dpi=120)
+    plt.close()
+    print(f"  ✓ Plot saved → {plot_path}")
 
 
 # ============================================================================
-# 10 EXPERIMENTS - MEMBER 3
+# YOUR 10 EXPERIMENTS  (MlpPolicy only)
 # ============================================================================
 
-EXPERIMENTS = [
+YOUR_EXPERIMENTS = [
     {
-        "name": "Exp1_AggressiveLR",
-        "config_changes": {"learning_rate": 0.001, "gamma": 0.95, "batch_size": 64},
+        "name": "Exp1_OptimizedBase",
+        "hyperparams": {
+            "learning_rate" : 5e-4,      # Moderate LR for Atari stability
+            "gamma"         : 0.99,      # Standard discount factor
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,   # Large replay buffer for Atari
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,      # Proper exploration decay
+            "epsilon_decay" : 100_000,   # Gradual decay over timesteps
+            "target_update_interval": 10_000,  # Update Q target less frequently
+            "learning_starts": 50_000,   # Let agent explore before learning
+        },
+        "total_timesteps": 100_000,
+        "notes": "Optimized baseline with Atari-tuned hyperparameters.",
     },
     {
-        "name": "Exp2_ConservativeLR",
-        "config_changes": {"learning_rate": 5e-6, "gamma": 0.999, "batch_size": 16},
+        "name": "Exp2_LowerLR",
+        "hyperparams": {
+            "learning_rate" : 1e-4,      # Lower LR for stability
+            "gamma"         : 0.99,
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Lower learning rate for more conservative updates.",
     },
     {
-        "name": "Exp3_BalancedConfig",
-        "config_changes": {"learning_rate": 1.5e-4, "gamma": 0.98, "batch_size": 32},
+        "name": "Exp3_HigherLR",
+        "hyperparams": {
+            "learning_rate" : 1e-3,      # Higher LR for faster learning
+            "gamma"         : 0.99,
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Higher learning rate for faster convergence.",
     },
     {
-        "name": "Exp4_HighExplorationHighLR",
-        "config_changes": {"learning_rate": 5e-4, "gamma": 0.99, "batch_size": 32, "epsilon_end": 0.15},
+        "name": "Exp4_LargeBatch",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
+            "batch_size"    : 64,        # Larger batch for stability
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Larger batch size (64) for gradient stability.",
     },
     {
-        "name": "Exp5_LowExplorationLowLR",
-        "config_changes": {"learning_rate": 5e-5, "gamma": 0.99, "batch_size": 32, "epsilon_end": 0.01},
+        "name": "Exp5_SmallBatch",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
+            "batch_size"    : 16,        # Smaller batch for faster updates
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Smaller batch size (16) for faster individual updates.",
     },
     {
-        "name": "Exp6_LargeBatchSmallLR",
-        "config_changes": {"learning_rate": 5e-5, "gamma": 0.99, "batch_size": 128},
+        "name": "Exp6_HighGamma",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.999,     # Higher discount factor
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Higher gamma (0.999) emphasizes long-term rewards.",
     },
     {
-        "name": "Exp7_SmallBatchLargeLR",
-        "config_changes": {"learning_rate": 5e-4, "gamma": 0.99, "batch_size": 16},
+        "name": "Exp7_LowGamma",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.95,      # Lower discount factor
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Lower gamma (0.95) prioritizes immediate rewards.",
     },
     {
-        "name": "Exp8_VeryHighGamma",
-        "config_changes": {"learning_rate": 1e-4, "gamma": 0.9999, "batch_size": 32},
+        "name": "Exp8_FastExploration",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 50_000,    # Faster epsilon decay
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Faster epsilon decay (50k) for quicker exploitation.",
     },
     {
-        "name": "Exp9_VeryLowGamma",
-        "config_changes": {"learning_rate": 1e-4, "gamma": 0.9, "batch_size": 32},
+        "name": "Exp9_SlowExploration",
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 150_000,   # Slower epsilon decay
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 100_000,
+        "notes": "Slower epsilon decay (150k) for extended exploration.",
     },
     {
         "name": "Exp10_ExtendedTraining",
-        "config_changes": {"learning_rate": 1e-4, "gamma": 0.99, "batch_size": 32, "total_timesteps": 300000},
+        "hyperparams": {
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
+            "batch_size"    : 32,
+            "buffer_size"   : 500_000,
+            "epsilon_start" : 1.0,
+            "epsilon_end"   : 0.01,
+            "epsilon_decay" : 100_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
+        },
+        "total_timesteps": 200_000,     # Double training time
+        "notes": "Extended training (200k timesteps) for deeper learning.",
     },
 ]
 
+# ============================================================================
+# SUMMARY HELPERS
+# ============================================================================
 
-def run_all_experiments():
-    """Run all 10 experiments with MlpPolicy only."""
-    import json
-    
-    os.makedirs("models", exist_ok=True)
-    
-    results = []
-    total_experiments = len(EXPERIMENTS)
-    current = 0
-    
-    for exp in EXPERIMENTS:
-        current += 1
-        print(f"\n{'='*70}")
-        print(f"Running Experiment {current}/{total_experiments}")
-        print(f"Experiment: {exp['name']}")
-        print(f"Policy: MlpPolicy")
-        print(f"{'='*70}\n")
-        
-        # Save original config
-        original_config = CONFIG.copy()
-        
-        # Update config with experiment changes
-        CONFIG.update(exp["config_changes"])
-        CONFIG["policy_type"] = "MlpPolicy"
-        
-        # Set model path
-        base_name = exp["name"].lower().replace(" ", "_")
-        CONFIG["model_save_path"] = f"models/{base_name}_mlp.zip"
-        
-        try:
-            # Train
-            model, stats = main()
-            
-            # Store results
-            result = {
-                "experiment": exp["name"],
-                "policy": "MlpPolicy",
-                "config": exp["config_changes"],
-                "mean_reward": stats["mean_episode_reward"],
-                "max_reward": stats["max_episode_reward"],
-                "episodes": stats["episodes_completed"],
-                "time": stats["training_time_seconds"],
-            }
-            results.append(result)
-                
-        except Exception as e:
-            print(f"\n✗ Failed: {e}")
-            results.append({
-                "experiment": exp["name"],
-                "policy": "MlpPolicy",
-                "error": str(e)
-            })
-        finally:
-            # Restore config
-            CONFIG.clear()
-            CONFIG.update(original_config)
-    
-    # Save results
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_file = f"results_{timestamp}.json"
-    with open(results_file, "w") as f:
-        json.dump(results, f, indent=2)
-    
-    print(f"\n{'='*70}")
-    print("EXPERIMENT SUMMARY")
-    print(f"{'='*70}\n")
-    
-    # Show individual experiment results
-    print(f"Individual Experiment Results:")
-    for result in results:
-        if "error" not in result:
-            mean_reward = result.get("mean_reward", 0)
-            print(f"  {result['experiment']:30s} | Mean Reward: {mean_reward:8.2f}")
+def print_summary(results: List[Dict]) -> None:
+    print(f"\n{'='*80}")
+    print(f"  YOUR EXPERIMENTS — SUMMARY  ({len(results)} runs | MlpPolicy | Tennis-v5)")
+    print(f"{'='*80}")
+    header = f"  {'Experiment':<35} {'Mean Reward':>12} {'Max Reward':>11} {'Episodes':>9} {'Time(s)':>8}"
+    print(header)
+    print(f"  {'-'*75}")
+    for r in results:
+        if "error" in r:
+            print(f"  {r['experiment']:<35}  ERROR: {r['error']}")
         else:
-            print(f"  {result['experiment']:30s} | ERROR: {result['error']}")
-    
-    print(f"\nResults saved to: {results_file}\n")
+            print(
+                f"  {r['experiment']:<35}"
+                f"  {r['mean_reward']:>10.2f}"
+                f"  {r['max_reward']:>10.2f}"
+                f"  {r['episodes']:>9}"
+                f"  {r['training_time']:>8.1f}s"
+            )
+    print(f"{'='*80}\n")
+
+
+def save_master_results(results: List[Dict]) -> Path:
+    ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = BASE_DIR / f"results_custom_{ts}.json"
+    clean = [{k: v for k, v in r.items() if k != "episode_rewards"} for r in results]
+    with open(path, "w") as f:
+        json.dump(clean, f, indent=2)
+    print(f"  ✓ Master results → {path}")
+    return path
+
+
+def print_hyperparameter_table(experiments: List[Dict]) -> None:
+    """Print the assignment-style hyperparameter table for copy-pasting."""
+    print(f"\n{'='*80}")
+    print("  HYPERPARAMETER TABLE  (Your Experiments)")
+    print(f"{'='*80}")
+    print(f"  {'#':<4} {'Experiment':<35} {'lr':<8} {'gamma':<7} {'batch':<7} "
+          f"{'ε_start':<9} {'ε_end':<8} {'ε_decay':<9}")
+    print(f"  {'-'*78}")
+    for i, exp in enumerate(experiments, 1):
+        hp = exp["hyperparams"]
+        print(
+            f"  {i:<4} {exp['name']:<35}"
+            f" {hp['learning_rate']:<8}"
+            f" {hp['gamma']:<7}"
+            f" {hp['batch_size']:<7}"
+            f" {hp.get('epsilon_start', 1.0):<9}"
+            f" {hp['epsilon_end']:<8}"
+            f" {hp.get('epsilon_decay', 50000):<9}"
+        )
+    print(f"{'='*80}\n")
+
+
+# ============================================================================
+# MAIN RUNNER
+# ============================================================================
+
+def main():
+    print("\n" + "="*70)
+    print("  Deep Q-Network  |  MlpPolicy  |  Your 10 Experiments")
+    print(f"  Environment : {ENV_NAME}")
+    print(f"  Output dir  : {BASE_DIR}")
+    print("="*70)
+
+    print_hyperparameter_table(YOUR_EXPERIMENTS)
+
+    results: List[Dict] = []
+
+    for i, exp in enumerate(YOUR_EXPERIMENTS, 1):
+        print(f"\n>>> Starting experiment {i}/{len(YOUR_EXPERIMENTS)}: {exp['name']}")
+        print(f"    Notes: {exp['notes']}")
+        try:
+            result = train_experiment(
+                exp_name         = exp["name"],
+                hyperparams      = exp["hyperparams"],
+                total_timesteps  = exp.get("total_timesteps", TOTAL_TIMESTEPS_DEFAULT),
+            )
+            result["notes"] = exp["notes"]
+            results.append(result)
+        except Exception as e:
+            print(f"\n  ✗ Experiment {exp['name']} failed: {e}")
+            results.append({"experiment": exp["name"], "policy": POLICY_TYPE, "error": str(e)})
+
+    print_summary(results)
+    save_master_results(results)
+    print("  ✓ All experiments complete.\n")
 
 
 if __name__ == "__main__":
-    run_all_experiments()
+    main()
