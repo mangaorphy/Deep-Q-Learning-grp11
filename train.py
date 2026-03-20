@@ -10,9 +10,11 @@ Member: Your Name
 """
 
 import os
+import sys
 import json
 import time
 import gc
+import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -20,7 +22,6 @@ from typing import Dict, List, Tuple, Optional
 import numpy as np
 import gymnasium as gym
 import ale_py
-import os
 
 # Force CPU on Kaggle (P100 CUDA compatibility issue)
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -55,7 +56,7 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 ENV_NAME       = "ALE/Tennis-v5"
 POLICY_TYPE    = "MlpPolicy"          # Fixed: MLP only
-TOTAL_TIMESTEPS_DEFAULT = 50_000       # Reduced for Colab GPU memory
+TOTAL_TIMESTEPS_DEFAULT = 300_000     # Default timesteps for full Tennis learning (18 actions)
 SEED           = 42
 
 # ============================================================================
@@ -223,114 +224,114 @@ YOUR_EXPERIMENTS = [
     {
         "name": "Exp1_OptimizedBase",
         "hyperparams": {
-            "learning_rate" : 5e-4,      # Moderate LR for Atari stability
-            "gamma"         : 0.99,      # Standard discount factor
+            "learning_rate" : 5e-4,
+            "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,   # Reduced from 500k for Colab GPU
+            "buffer_size"   : 500_000,   # Large buffer for stability
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,      # Proper exploration decay
-            "epsilon_decay" : 50_000,    # Reduced for 50k timesteps
-            "target_update_interval": 5_000,   # Update more frequently
-            "learning_starts": 10_000,   # Start training earlier
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,   # Long exploration for 18 actions
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,   # Accumulate good experiences first
         },
-        "total_timesteps": 50_000,
-        "notes": "Optimized baseline with Colab-compatible hyperparameters.",
+        "total_timesteps": 300_000,
+        "notes": "Optimized baseline for Tennis (18 actions) - full learning.",
     },
     {
         "name": "Exp2_LowerLR",
         "hyperparams": {
-            "learning_rate" : 1e-4,      # Lower LR for stability
+            "learning_rate" : 1e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Lower learning rate for more conservative updates.",
+        "total_timesteps": 300_000,
+        "notes": "Lower learning rate - conservative, stable updates.",
     },
     {
         "name": "Exp3_HigherLR",
         "hyperparams": {
-            "learning_rate" : 1e-3,      # Higher LR for faster learning
+            "learning_rate" : 1e-3,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Higher learning rate for faster convergence.",
+        "total_timesteps": 300_000,
+        "notes": "Higher learning rate - faster convergence risk/reward.",
     },
     {
         "name": "Exp4_LargeBatch",
         "hyperparams": {
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
-            "batch_size"    : 64,        # Larger batch for stability
-            "buffer_size"   : 100_000,
+            "batch_size"    : 64,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Larger batch size (64) for gradient stability.",
+        "total_timesteps": 300_000,
+        "notes": "Larger batch (64) - gradient stability, slower updates.",
     },
     {
         "name": "Exp5_SmallBatch",
         "hyperparams": {
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
-            "batch_size"    : 16,        # Smaller batch for faster updates
-            "buffer_size"   : 100_000,
+            "batch_size"    : 16,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Smaller batch size (16) for faster individual updates.",
+        "total_timesteps": 300_000,
+        "notes": "Smaller batch (16) - faster individual updates, noisier.",
     },
     {
         "name": "Exp6_HighGamma",
         "hyperparams": {
             "learning_rate" : 5e-4,
-            "gamma"         : 0.999,     # Higher discount factor
+            "gamma"         : 0.999,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Higher gamma (0.999) emphasizes long-term rewards.",
+        "total_timesteps": 300_000,
+        "notes": "High gamma (0.999) - strong long-term reward preference.",
     },
     {
         "name": "Exp7_LowGamma",
         "hyperparams": {
             "learning_rate" : 5e-4,
-            "gamma"         : 0.95,      # Lower discount factor
+            "gamma"         : 0.95,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 200_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Lower gamma (0.95) prioritizes immediate rewards.",
+        "total_timesteps": 300_000,
+        "notes": "Low gamma (0.95) - prioritizes immediate rewards.",
     },
     {
         "name": "Exp8_FastExploration",
@@ -338,15 +339,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 25_000,    # Faster epsilon decay
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 100_000,   # Fast epsilon decay
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Faster epsilon decay (25k) for quicker exploitation.",
+        "total_timesteps": 300_000,
+        "notes": "Fast exploration decay - quicker shift to exploitation.",
     },
     {
         "name": "Exp9_SlowExploration",
@@ -354,15 +355,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 75_000,    # Slower epsilon decay
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 300_000,   # Slow epsilon decay (extended beyond total_timesteps)
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 50_000,
-        "notes": "Slower epsilon decay (75k) for extended exploration.",
+        "total_timesteps": 300_000,
+        "notes": "Slow exploration decay - extended exploration phase.",
     },
     {
         "name": "Exp10_ExtendedTraining",
@@ -370,15 +371,15 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 100_000,
+            "buffer_size"   : 500_000,
             "epsilon_start" : 1.0,
-            "epsilon_end"   : 0.01,
-            "epsilon_decay" : 50_000,
-            "target_update_interval": 5_000,
-            "learning_starts": 10_000,
+            "epsilon_end"   : 0.05,
+            "epsilon_decay" : 300_000,
+            "target_update_interval": 10_000,
+            "learning_starts": 50_000,
         },
-        "total_timesteps": 100_000,     # Extended: 2x the others
-        "notes": "Extended training (100k timesteps) for deeper learning.",
+        "total_timesteps": 500_000,    # 5x longer for deep convergence
+        "notes": "Extended training (500k steps) for maximum learning on Tennis.",
     },
 ]
 
@@ -444,9 +445,33 @@ def print_hyperparameter_table(experiments: List[Dict]) -> None:
 # ============================================================================
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Train DQN agent on Tennis-v5 - Run experiments one at a time for full learning"
+    )
+    parser.add_argument(
+        "--exp",
+        type=int,
+        default=None,
+        help="Run specific experiment number (1-10). If not provided, runs all 10 experiments sequentially.",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List all available experiments and exit."
+    )
+    
+    args = parser.parse_args()
+
+    if args.list:
+        print_hyperparameter_table(YOUR_EXPERIMENTS)
+        for i, exp in enumerate(YOUR_EXPERIMENTS, 1):
+            print(f"{i}. {exp['name']}: {exp['notes']}")
+        sys.exit(0)
+
     print("\n" + "="*70)
     print("  Deep Q-Network  |  MlpPolicy  |  Your 10 Experiments")
     print(f"  Environment : {ENV_NAME}")
+    print(f"  Action Space: 18 actions (see Tennis documentation)")
     print(f"  Output dir  : {BASE_DIR}")
     print("="*70)
 
@@ -454,9 +479,18 @@ def main():
 
     results: List[Dict] = []
 
-    for i, exp in enumerate(YOUR_EXPERIMENTS, 1):
-        print(f"\n>>> Starting experiment {i}/{len(YOUR_EXPERIMENTS)}: {exp['name']}")
+    if args.exp:
+        # Run single experiment
+        if args.exp < 1 or args.exp > len(YOUR_EXPERIMENTS):
+            print(f"✗ Invalid experiment number. Choose 1-{len(YOUR_EXPERIMENTS)}")
+            sys.exit(1)
+        
+        exp_idx = args.exp - 1
+        exp = YOUR_EXPERIMENTS[exp_idx]
+        print(f"\n>>> Running SINGLE experiment {args.exp}/{len(YOUR_EXPERIMENTS)}: {exp['name']}")
         print(f"    Notes: {exp['notes']}")
+        print(f"    Timesteps: {exp.get('total_timesteps', TOTAL_TIMESTEPS_DEFAULT):,}")
+        
         try:
             result = train_experiment(
                 exp_name         = exp["name"],
@@ -465,13 +499,37 @@ def main():
             )
             result["notes"] = exp["notes"]
             results.append(result)
+            print_summary(results)
         except Exception as e:
             print(f"\n  ✗ Experiment {exp['name']} failed: {e}")
-            results.append({"experiment": exp["name"], "policy": POLICY_TYPE, "error": str(e)})
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+    else:
+        # Run all experiments sequentially
+        print(f"\n>>> Running ALL {len(YOUR_EXPERIMENTS)} experiments sequentially (one at a time)")
+        print("    Each experiment will complete fully before the next starts.\n")
+        
+        for i, exp in enumerate(YOUR_EXPERIMENTS, 1):
+            print(f"\n>>> Starting experiment {i}/{len(YOUR_EXPERIMENTS)}: {exp['name']}")
+            print(f"    Notes: {exp['notes']}")
+            print(f"    Timesteps: {exp.get('total_timesteps', TOTAL_TIMESTEPS_DEFAULT):,}")
+            try:
+                result = train_experiment(
+                    exp_name         = exp["name"],
+                    hyperparams      = exp["hyperparams"],
+                    total_timesteps  = exp.get("total_timesteps", TOTAL_TIMESTEPS_DEFAULT),
+                )
+                result["notes"] = exp["notes"]
+                results.append(result)
+            except Exception as e:
+                print(f"\n  ✗ Experiment {exp['name']} failed: {e}")
+                results.append({"experiment": exp["name"], "policy": POLICY_TYPE, "error": str(e)})
 
-    print_summary(results)
+        print_summary(results)
+
     save_master_results(results)
-    print("  ✓ All experiments complete.\n")
+    print("  ✓ Experiment(s) complete.\n")
 
 
 if __name__ == "__main__":
