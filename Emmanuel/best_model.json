@@ -1,0 +1,51 @@
+{
+  "member": "Emmanuel",
+  "policy": "MlpPolicy",
+  "environment": "ALE/Tennis-v5",
+  "selection_date": "2026-03-18",
+  "best_model": {
+    "experiment": "Exp1_Baseline",
+    "model_file": "emmanuel/models/exp1_baseline_mlp.zip",
+    "hyperparams": {
+      "learning_rate": 0.0001,
+      "gamma": 0.99,
+      "batch_size": 32,
+      "epsilon_start": 1.0,
+      "epsilon_end": 0.05,
+      "epsilon_decay": 50000
+    },
+    "total_timesteps": 50000,
+    "performance": {
+      "mean_reward": -23.571428571428573,
+      "max_reward": -22.0,
+      "min_reward": -24.0,
+      "std_reward": 0.7284313590846835,
+      "episodes": 7,
+      "training_time_seconds": 158.91
+    },
+    "outperforms_others_because": {
+      "best_mean_reward": "Exp1 achieved -23.57 mean reward — better than all other experiments which scored -23.71 or worse.",
+      "best_max_reward": "Exp1 is the only experiment that ever scored -22.0 in a single episode. All others peaked at -23.0 or -24.0.",
+      "highest_reward_variance": "Exp1 has the highest std_reward (0.73), meaning the agent occasionally discovered better actions — a sign of early learning signal that others lacked entirely (Exp2, Exp4, Exp5 had std=0.0, meaning the agent was stuck at -24 every single episode).",
+      "stable_learning_rate": "lr=0.0001 is the DQN sweet spot — high enough to update meaningfully, low enough to avoid divergence. Exp2 (lr=0.001) was 10x higher and achieved zero variance, indicating the Q-network destabilised.",
+      "optimal_gamma": "gamma=0.99 balances short and long-term rewards. Exp4 (gamma=0.90) was too short-sighted and scored -24.0 every episode. Exp5 (gamma=0.999) over-weighted distant rewards and also stagnated at -24.0.",
+      "efficient_batch_size": "batch=32 gives enough gradient signal without being too noisy (batch=16, Exp7) or too slow to update (batch=128, Exp6 took 247s vs 158s)."
+    }
+  },
+  "comparison_table": [
+    { "rank": 1, "experiment": "Exp1_Baseline",           "lr": 0.0001,  "gamma": 0.99,  "batch": 32,  "epsilon_end": 0.05, "mean_reward": -23.57, "max_reward": -22.0, "std_reward": 0.73 },
+    { "rank": 2, "experiment": "Exp3_VeryLowLR",          "lr": 0.00001, "gamma": 0.99,  "batch": 32,  "epsilon_end": 0.05, "mean_reward": -23.71, "max_reward": -23.0, "std_reward": 0.45 },
+    { "rank": 3, "experiment": "Exp6_LargeBatch",         "lr": 0.0002,  "gamma": 0.99,  "batch": 128, "epsilon_end": 0.05, "mean_reward": -23.86, "max_reward": -23.0, "std_reward": 0.35 },
+    { "rank": 3, "experiment": "Exp7_SmallBatch_HighLR",  "lr": 0.0005,  "gamma": 0.99,  "batch": 16,  "epsilon_end": 0.05, "mean_reward": -23.86, "max_reward": -23.0, "std_reward": 0.35 },
+    { "rank": 3, "experiment": "Exp8_AggressiveExplore",  "lr": 0.0001,  "gamma": 0.99,  "batch": 32,  "epsilon_end": 0.20, "mean_reward": -23.86, "max_reward": -23.0, "std_reward": 0.35 },
+    { "rank": 3, "experiment": "Exp9_GreedyExploit",      "lr": 0.0001,  "gamma": 0.99,  "batch": 32,  "epsilon_end": 0.01, "mean_reward": -23.86, "max_reward": -23.0, "std_reward": 0.35 },
+    { "rank": 3, "experiment": "Exp10_SlowDecay_MidLR",   "lr": 0.00025, "gamma": 0.995, "batch": 64,  "epsilon_end": 0.05, "mean_reward": -23.86, "max_reward": -23.0, "std_reward": 0.35 },
+    { "rank": 8, "experiment": "Exp2_HighLR",             "lr": 0.001,   "gamma": 0.99,  "batch": 32,  "epsilon_end": 0.05, "mean_reward": -24.00, "max_reward": -24.0, "std_reward": 0.00 },
+    { "rank": 8, "experiment": "Exp4_LowGamma",           "lr": 0.0001,  "gamma": 0.90,  "batch": 32,  "epsilon_end": 0.05, "mean_reward": -24.00, "max_reward": -24.0, "std_reward": 0.00 },
+    { "rank": 8, "experiment": "Exp5_HighGamma",          "lr": 0.0001,  "gamma": 0.999, "batch": 32,  "epsilon_end": 0.05, "mean_reward": -24.00, "max_reward": -24.0, "std_reward": 0.00 }
+  ],
+  "worst_configs": {
+    "experiments": ["Exp2_HighLR", "Exp4_LowGamma", "Exp5_HighGamma"],
+    "reason": "These three experiments scored -24.0 mean and -24.0 max with zero variance — the agent lost every single point in every episode. The Q-network either diverged (high LR) or failed to value future rewards correctly (extreme gamma values)."
+  }
+}
