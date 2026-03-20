@@ -1,0 +1,18 @@
+{
+  "completed": [
+    1
+  ],
+  "results": {
+    "1": {
+      "id": 1,
+      "name": "Exp1_Baseline",
+      "policy": "CnnPolicy",
+      "mean_reward": -21.67,
+      "max_reward": -9.0,
+      "last20_mean": -20.65,
+      "episodes": 30,
+      "time": 708.1,
+      "model_path": "models/exp1_baseline_cnnpolicy.zip"
+    }
+  }
+}

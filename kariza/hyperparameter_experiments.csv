@@ -1,0 +1,2 @@
+exp_id,name,member,env,policy,lr,gamma,batch_size,eps_start,eps_end,eps_decay,n_envs,timesteps,n_episodes,mean_reward,max_reward,last20_mean,elapsed_s,noted_behavior
+1,Exp1_Baseline,Kariza,ALE/Tennis-v5,CnnPolicy,0.0001,0.99,32,1.0,0.05,0.1,4,100000,30,-21.67,-9.0,-20.65,708.1,"n_ep=30, mean=-21.67, max=-9.0, last20=-20.65. Balanced default — reference point for all other runs"
