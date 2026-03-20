@@ -23,8 +23,9 @@ import numpy as np
 import gymnasium as gym
 import ale_py
 
-# Force CPU on Kaggle (P100 CUDA compatibility issue)
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+# Use GPU if available, fall back to CPU
+# NOTE: Kaggle P100 is compatible with stable-baselines3
+# os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Uncomment to force CPU
 
 gym.register_envs(ale_py)
 
@@ -102,6 +103,7 @@ class RewardLogger(BaseCallback):
         self.episode_rewards: List[float] = []
         self.episode_lengths: List[int]   = []
         self._current_rewards: Dict       = {}
+        self.memory_cleanup_freq = 10_000  # Cleanup every 10k steps
 
     def _on_step(self) -> bool:
         infos = self.locals.get("infos", [])
@@ -109,6 +111,13 @@ class RewardLogger(BaseCallback):
             if "episode" in info:
                 self.episode_rewards.append(info["episode"]["r"])
                 self.episode_lengths.append(info["episode"]["l"])
+        
+        # Periodic memory cleanup
+        if self.n_calls % self.memory_cleanup_freq == 0:
+            gc.collect()
+            if hasattr(self.model, 'replay_buffer') and hasattr(self.model.replay_buffer, 'reset'):
+                pass  # SB3 handles buffer internally
+        
         return True
 
 # ============================================================================
@@ -224,6 +233,14 @@ def _plot_rewards(rewards: List[float], title: str, safe_name: str) -> None:
 # YOUR 10 EXPERIMENTS  (MlpPolicy only)
 # ============================================================================
 
+# Check if running on Kaggle (use smaller buffer) or locally (use large buffer)
+IS_KAGGLE = "/kaggle" in os.path.abspath(".")
+BUFFER_SIZE_KAGGLE = 100_000  # Smaller buffer for Kaggle GPU
+BUFFER_SIZE_LOCAL = 500_000   # Larger buffer for local development
+BUFFER_SIZE = BUFFER_SIZE_KAGGLE if IS_KAGGLE else BUFFER_SIZE_LOCAL
+
+print(f"[INFO] Running on {'Kaggle' if IS_KAGGLE else 'Local'} - Using buffer size: {BUFFER_SIZE:,}")
+
 YOUR_EXPERIMENTS = [
     {
         "name": "Exp1_OptimizedBase",
@@ -231,7 +248,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,   # Large buffer for stability
+            "buffer_size"   : BUFFER_SIZE,   # Adaptive buffer
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,   # Long exploration for 18 actions
@@ -247,7 +264,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 1e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -263,7 +280,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 1e-3,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -279,7 +296,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 64,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -295,7 +312,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 16,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -311,7 +328,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.999,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -327,7 +344,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.95,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 200_000,
@@ -343,7 +360,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 100_000,   # Fast epsilon decay
@@ -359,7 +376,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 300_000,   # Slow epsilon decay (extended beyond total_timesteps)
@@ -375,7 +392,7 @@ YOUR_EXPERIMENTS = [
             "learning_rate" : 5e-4,
             "gamma"         : 0.99,
             "batch_size"    : 32,
-            "buffer_size"   : 500_000,
+            "buffer_size"   : BUFFER_SIZE,
             "epsilon_start" : 1.0,
             "epsilon_end"   : 0.05,
             "epsilon_decay" : 300_000,
