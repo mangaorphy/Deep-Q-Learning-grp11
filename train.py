@@ -82,7 +82,7 @@ def make_env(seed: int = SEED) -> gym.Env:
         grayscale_newaxis=False,
         scale_obs=True,
     )
-    env = gym.wrappers.FrameStackObservation(env, num_stack=4)
+    env = gym.wrappers.FrameStackObservation(env, stack_size=4)
     return env
 
 # ============================================================================
