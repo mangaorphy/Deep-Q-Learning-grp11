@@ -8,7 +8,8 @@
     6,
     7,
     8,
-    9
+    9,
+    10
   ],
   "results": {
     "1": {
@@ -109,6 +110,17 @@
       "episodes": 90,
       "time": 630.6,
       "model_path": "models/exp9_slowepsilondecay_cnnpolicy.zip"
+    },
+    "10": {
+      "id": 10,
+      "name": "Exp10_BestGuess",
+      "policy": "CnnPolicy",
+      "mean_reward": -22.75,
+      "max_reward": -2.0,
+      "last20_mean": -22.1,
+      "episodes": 36,
+      "time": 991.6,
+      "model_path": "models/exp10_bestguess_cnnpolicy.zip"
     }
   }
 }

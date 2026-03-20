@@ -1,0 +1,82 @@
+[
+  {
+    "experiment": "Exp1_Baseline",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.67,
+    "max_reward": -9.0,
+    "episodes": 30,
+    "time": 708.1
+  },
+  {
+    "experiment": "Exp2_AggressiveLR",
+    "policy": "CnnPolicy",
+    "mean_reward": -22.33,
+    "max_reward": -11.0,
+    "episodes": 27,
+    "time": 1125.2
+  },
+  {
+    "experiment": "Exp3_LowLR",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.21,
+    "max_reward": -9.0,
+    "episodes": 34,
+    "time": 727.8
+  },
+  {
+    "experiment": "Exp4_LowGamma",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.35,
+    "max_reward": -3.0,
+    "episodes": 31,
+    "time": 706.2
+  },
+  {
+    "experiment": "Exp5_HighGamma",
+    "policy": "CnnPolicy",
+    "mean_reward": -23.32,
+    "max_reward": -16.0,
+    "episodes": 34,
+    "time": 678.1
+  },
+  {
+    "experiment": "Exp6_LargeBatch",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.37,
+    "max_reward": -8.0,
+    "episodes": 30,
+    "time": 1645.5
+  },
+  {
+    "experiment": "Exp7_SmallBatch",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.98,
+    "max_reward": -1.0,
+    "episodes": 44,
+    "time": 464.1
+  },
+  {
+    "experiment": "Exp8_HighEpsilonEnd",
+    "policy": "CnnPolicy",
+    "mean_reward": -23.78,
+    "max_reward": -22.0,
+    "episodes": 51,
+    "time": 628.6
+  },
+  {
+    "experiment": "Exp9_SlowEpsilonDecay",
+    "policy": "CnnPolicy",
+    "mean_reward": -23.78,
+    "max_reward": -22.0,
+    "episodes": 90,
+    "time": 630.6
+  },
+  {
+    "experiment": "Exp10_BestGuess",
+    "policy": "CnnPolicy",
+    "mean_reward": -22.75,
+    "max_reward": -2.0,
+    "episodes": 36,
+    "time": 991.6
+  }
+]
