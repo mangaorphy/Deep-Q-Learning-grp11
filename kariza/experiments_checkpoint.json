@@ -2,7 +2,13 @@
   "completed": [
     1,
     2,
-    3
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
   ],
   "results": {
     "1": {
@@ -37,6 +43,72 @@
       "episodes": 34,
       "time": 727.8,
       "model_path": "models/exp3_lowlr_cnnpolicy.zip"
+    },
+    "4": {
+      "id": 4,
+      "name": "Exp4_LowGamma",
+      "policy": "CnnPolicy",
+      "mean_reward": -21.35,
+      "max_reward": -3.0,
+      "last20_mean": -20.1,
+      "episodes": 31,
+      "time": 706.2,
+      "model_path": "models/exp4_lowgamma_cnnpolicy.zip"
+    },
+    "5": {
+      "id": 5,
+      "name": "Exp5_HighGamma",
+      "policy": "CnnPolicy",
+      "mean_reward": -23.32,
+      "max_reward": -16.0,
+      "last20_mean": -23.2,
+      "episodes": 34,
+      "time": 678.1,
+      "model_path": "models/exp5_highgamma_cnnpolicy.zip"
+    },
+    "6": {
+      "id": 6,
+      "name": "Exp6_LargeBatch",
+      "policy": "CnnPolicy",
+      "mean_reward": -21.37,
+      "max_reward": -8.0,
+      "last20_mean": -20.2,
+      "episodes": 30,
+      "time": 1645.5,
+      "model_path": "models/exp6_largebatch_cnnpolicy.zip"
+    },
+    "7": {
+      "id": 7,
+      "name": "Exp7_SmallBatch",
+      "policy": "CnnPolicy",
+      "mean_reward": -21.98,
+      "max_reward": -1.0,
+      "last20_mean": -19.9,
+      "episodes": 44,
+      "time": 464.1,
+      "model_path": "models/exp7_smallbatch_cnnpolicy.zip"
+    },
+    "8": {
+      "id": 8,
+      "name": "Exp8_HighEpsilonEnd",
+      "policy": "CnnPolicy",
+      "mean_reward": -23.78,
+      "max_reward": -22.0,
+      "last20_mean": -23.85,
+      "episodes": 51,
+      "time": 628.6,
+      "model_path": "models/exp8_highepsilonend_cnnpolicy.zip"
+    },
+    "9": {
+      "id": 9,
+      "name": "Exp9_SlowEpsilonDecay",
+      "policy": "CnnPolicy",
+      "mean_reward": -23.78,
+      "max_reward": -22.0,
+      "last20_mean": -23.8,
+      "episodes": 90,
+      "time": 630.6,
+      "model_path": "models/exp9_slowepsilondecay_cnnpolicy.zip"
     }
   }
 }
