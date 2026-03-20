@@ -1,6 +1,6 @@
 {
-  "mean_reward": -21.21,
-  "exp_id": 3,
-  "name": "Exp3_LowLR",
-  "saved_at": "2026-03-20 13:37:44"
+  "mean_reward": -20.83,
+  "exp_id": 1,
+  "name": "Exp1_LowLR_500k",
+  "saved_at": "2026-03-20 23:45:11"
 }
