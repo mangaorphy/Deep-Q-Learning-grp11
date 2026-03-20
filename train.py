@@ -24,8 +24,11 @@ import gymnasium as gym
 import ale_py
 
 # Use GPU if available, fall back to CPU
-# NOTE: Kaggle P100 is compatible with stable-baselines3
-# os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Uncomment to force CPU
+# NOTE: Kaggle P100 has CUDA capability 6.0, but PyTorch requires 7.0+
+# So we force CPU on Kaggle for stability
+if "/kaggle" in os.path.abspath("."):
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU on Kaggle
+    print("[INFO] Running on Kaggle - Using CPU (GPU incompatible with PyTorch)")
 
 gym.register_envs(ale_py)
 
