@@ -82,7 +82,11 @@ def make_env(seed: int = SEED) -> gym.Env:
         grayscale_newaxis=False,
         scale_obs=True,
     )
-    env = gym.wrappers.FrameStackObservation(env, stack_size=4)
+    # Use FrameStackObservation if available (gymnasium 0.29.1+), otherwise use FrameStack
+    if hasattr(gym.wrappers, 'FrameStackObservation'):
+        env = gym.wrappers.FrameStackObservation(env, stack_size=4)
+    else:
+        env = gym.wrappers.FrameStack(env, num_stack=4)
     return env
 
 # ============================================================================
