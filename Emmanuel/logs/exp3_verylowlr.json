@@ -1,0 +1,20 @@
+{
+  "experiment": "Exp3_VeryLowLR",
+  "policy": "MlpPolicy",
+  "hyperparams": {
+    "learning_rate": 1e-05,
+    "gamma": 0.99,
+    "batch_size": 32,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 50000
+  },
+  "total_timesteps": 50000,
+  "episodes": 7,
+  "mean_reward": -23.714285714285715,
+  "max_reward": -23.0,
+  "min_reward": -24.0,
+  "std_reward": 0.45175395145262565,
+  "training_time": 171.32,
+  "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp3_verylowlr_mlp.zip"
+}

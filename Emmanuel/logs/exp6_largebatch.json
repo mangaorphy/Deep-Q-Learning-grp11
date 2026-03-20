@@ -1,0 +1,20 @@
+{
+  "experiment": "Exp6_LargeBatch",
+  "policy": "MlpPolicy",
+  "hyperparams": {
+    "learning_rate": 0.0002,
+    "gamma": 0.99,
+    "batch_size": 128,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 50000
+  },
+  "total_timesteps": 50000,
+  "episodes": 7,
+  "mean_reward": -23.857142857142858,
+  "max_reward": -23.0,
+  "min_reward": -24.0,
+  "std_reward": 0.34992710611188255,
+  "training_time": 247.08,
+  "model_path": "/Users/macbook/Documents/Deep-Q-Learning-grp11/emmanuel/models/exp6_largebatch_mlp.zip"
+}
