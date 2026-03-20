@@ -1,6 +1,8 @@
 {
   "completed": [
-    1
+    1,
+    2,
+    3
   ],
   "results": {
     "1": {
@@ -13,6 +15,28 @@
       "episodes": 30,
       "time": 708.1,
       "model_path": "models/exp1_baseline_cnnpolicy.zip"
+    },
+    "2": {
+      "id": 2,
+      "name": "Exp2_AggressiveLR",
+      "policy": "CnnPolicy",
+      "mean_reward": -22.33,
+      "max_reward": -11.0,
+      "last20_mean": -21.85,
+      "episodes": 27,
+      "time": 1125.2,
+      "model_path": "models/exp2_aggressivelr_cnnpolicy.zip"
+    },
+    "3": {
+      "id": 3,
+      "name": "Exp3_LowLR",
+      "policy": "CnnPolicy",
+      "mean_reward": -21.21,
+      "max_reward": -9.0,
+      "last20_mean": -19.55,
+      "episodes": 34,
+      "time": 727.8,
+      "model_path": "models/exp3_lowlr_cnnpolicy.zip"
     }
   }
 }

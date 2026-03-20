@@ -1,2 +1,4 @@
 exp_id,name,member,env,policy,lr,gamma,batch_size,eps_start,eps_end,eps_decay,n_envs,timesteps,n_episodes,mean_reward,max_reward,last20_mean,elapsed_s,noted_behavior
 1,Exp1_Baseline,Kariza,ALE/Tennis-v5,CnnPolicy,0.0001,0.99,32,1.0,0.05,0.1,4,100000,30,-21.67,-9.0,-20.65,708.1,"n_ep=30, mean=-21.67, max=-9.0, last20=-20.65. Balanced default — reference point for all other runs"
+2,Exp2_AggressiveLR,Kariza,ALE/Tennis-v5,CnnPolicy,0.001,0.95,64,1.0,0.05,0.1,4,100000,27,-22.33,-11.0,-21.85,1125.2,"n_ep=27, mean=-22.33, max=-11.0, last20=-21.85. High lr + lower gamma — fast aggressive learning, likely unstable"
+3,Exp3_LowLR,Kariza,ALE/Tennis-v5,CnnPolicy,1e-05,0.99,32,1.0,0.05,0.1,4,100000,34,-21.21,-9.0,-19.55,727.8,"n_ep=34, mean=-21.21, max=-9.0, last20=-19.55. Very low lr — slow convergence expected, minimal improvement"
