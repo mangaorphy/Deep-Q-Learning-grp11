@@ -1,0 +1,23 @@
+{
+  "experiment": "Exp5_SmallBatch",
+  "policy": "MlpPolicy",
+  "hyperparams": {
+    "learning_rate": 0.0005,
+    "gamma": 0.99,
+    "batch_size": 16,
+    "buffer_size": 100000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 200000,
+    "target_update_interval": 10000,
+    "learning_starts": 50000
+  },
+  "total_timesteps": 300000,
+  "episodes": 39,
+  "mean_reward": -23.846153846153847,
+  "max_reward": -23.0,
+  "min_reward": -24.0,
+  "std_reward": 0.36080121229411,
+  "training_time": 2835.37,
+  "model_path": "/kaggle/working/dqn/models/exp5_smallbatch_mlp.zip"
+}

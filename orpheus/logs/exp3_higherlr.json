@@ -1,0 +1,23 @@
+{
+  "experiment": "Exp3_HigherLR",
+  "policy": "MlpPolicy",
+  "hyperparams": {
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "batch_size": 32,
+    "buffer_size": 100000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 200000,
+    "target_update_interval": 10000,
+    "learning_starts": 50000
+  },
+  "total_timesteps": 300000,
+  "episodes": 41,
+  "mean_reward": -23.878048780487806,
+  "max_reward": -22.0,
+  "min_reward": -24.0,
+  "std_reward": 0.3947905867375279,
+  "training_time": 2203.17,
+  "model_path": "/kaggle/working/dqn/models/exp3_higherlr_mlp.zip"
+}

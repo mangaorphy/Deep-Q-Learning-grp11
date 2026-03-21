@@ -1,0 +1,23 @@
+{
+  "experiment": "Exp7_LowGamma",
+  "policy": "MlpPolicy",
+  "hyperparams": {
+    "learning_rate": 0.0005,
+    "gamma": 0.95,
+    "batch_size": 32,
+    "buffer_size": 100000,
+    "epsilon_start": 1.0,
+    "epsilon_end": 0.05,
+    "epsilon_decay": 200000,
+    "target_update_interval": 10000,
+    "learning_starts": 50000
+  },
+  "total_timesteps": 300000,
+  "episodes": 38,
+  "mean_reward": -23.86842105263158,
+  "max_reward": -21.0,
+  "min_reward": -24.0,
+  "std_reward": 0.5216902000420791,
+  "training_time": 2587.05,
+  "model_path": "/kaggle/working/dqn/models/exp7_lowgamma_mlp.zip"
+}
