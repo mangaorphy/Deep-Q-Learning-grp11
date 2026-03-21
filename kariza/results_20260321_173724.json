@@ -1,0 +1,82 @@
+[
+  {
+    "experiment": "Exp1_LowLR_500k",
+    "policy": "CnnPolicy",
+    "mean_reward": -20.83,
+    "max_reward": -1.0,
+    "episodes": 144,
+    "time": 3441.0
+  },
+  {
+    "experiment": "Exp2_LowLR_LargeBatch",
+    "policy": "CnnPolicy",
+    "mean_reward": -22.23,
+    "max_reward": -1.0,
+    "episodes": 184,
+    "time": 14166.7
+  },
+  {
+    "experiment": "Exp3_LowLR_LowGamma",
+    "policy": "CnnPolicy",
+    "mean_reward": -20.8,
+    "max_reward": -1.0,
+    "episodes": 153,
+    "time": 6193.2
+  },
+  {
+    "experiment": "Exp4_LowLR_TightEps",
+    "policy": "CnnPolicy",
+    "mean_reward": -17.51,
+    "max_reward": 0.0,
+    "episodes": 149,
+    "time": 5839.7
+  },
+  {
+    "experiment": "Exp5_LowLR_SlowDecay",
+    "policy": "CnnPolicy",
+    "mean_reward": -22.82,
+    "max_reward": -1.0,
+    "episodes": 338,
+    "time": 4267.4
+  },
+  {
+    "experiment": "Exp6_LowLR_MedBatch",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.16,
+    "max_reward": -1.0,
+    "episodes": 165,
+    "time": 5168.6
+  },
+  {
+    "experiment": "Exp7_LowLR_LargeBatch_LowGamma",
+    "policy": "CnnPolicy",
+    "mean_reward": -19.35,
+    "max_reward": 1.0,
+    "episodes": 140,
+    "time": 8550.3
+  },
+  {
+    "experiment": "Exp8_LowLR_ModerateGamma",
+    "policy": "CnnPolicy",
+    "mean_reward": -21.09,
+    "max_reward": -1.0,
+    "episodes": 141,
+    "time": 3465.5
+  },
+  {
+    "experiment": "Exp9_LowLR_LargeBatch_TightEps",
+    "policy": "CnnPolicy",
+    "mean_reward": -17.24,
+    "max_reward": -1.0,
+    "episodes": 152,
+    "time": 9969.7
+  },
+  {
+    "experiment": "Exp10_LowLR_BestGuess",
+    "policy": "CnnPolicy",
+    "mean_reward": -18.9,
+    "max_reward": -1.0,
+    "episodes": 188,
+    "time": 6704.9
+  }
+]

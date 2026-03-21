@@ -64,7 +64,7 @@ DEFAULTS = {
     "epsilon_start":    1.0,
     "epsilon_end":      0.05,
     "epsilon_decay":    0.10,
-    "total_timesteps":  100_000,
+    "total_timesteps":  500_000,
     "n_envs":           4,
     "learning_starts":  5_000,
     "target_update":    1_000,
@@ -77,106 +77,115 @@ DEFAULTS = {
 # config_changes overrides any key in DEFAULTS above
 # ──────────────────────────────────────────────────────────────────────────────
 EXPERIMENTS = [
+    # ── Round 2: All built on Exp3_LowLR (lr=1e-5) — the winning insight ──────
     {
-        "name": "Exp1_Baseline",
+        "name": "Exp1_LowLR_500k",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.99,
-            "batch_size":    32,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      32,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp2_AggressiveLR",
+        "name": "Exp2_LowLR_LargeBatch",
         "config_changes": {
-            "learning_rate": 0.001,
-            "gamma":         0.95,
-            "batch_size":    64,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      128,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp3_LowLR",
+        "name": "Exp3_LowLR_LowGamma",
         "config_changes": {
-            "learning_rate": 1e-5,
-            "gamma":         0.99,
-            "batch_size":    32,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.90,
+            "batch_size":      32,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp4_LowGamma",
+        "name": "Exp4_LowLR_TightEps",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.90,
-            "batch_size":    32,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      32,
+            "epsilon_end":     0.01,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp5_HighGamma",
+        "name": "Exp5_LowLR_SlowDecay",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.999,
-            "batch_size":    32,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      32,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.40,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp6_LargeBatch",
+        "name": "Exp6_LowLR_MedBatch",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.99,
-            "batch_size":    128,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      64,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp7_SmallBatch",
+        "name": "Exp7_LowLR_LargeBatch_LowGamma",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.99,
-            "batch_size":    16,
-            "epsilon_end":   0.05,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.90,
+            "batch_size":      128,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp8_HighEpsilonEnd",
+        "name": "Exp8_LowLR_ModerateGamma",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.99,
-            "batch_size":    32,
-            "epsilon_end":   0.20,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.95,
+            "batch_size":      32,
+            "epsilon_end":     0.05,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp9_SlowEpsilonDecay",
+        "name": "Exp9_LowLR_LargeBatch_TightEps",
         "config_changes": {
-            "learning_rate": 1e-4,
-            "gamma":         0.99,
-            "batch_size":    32,
-            "epsilon_end":   0.05,
-            "epsilon_decay": 0.50,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.99,
+            "batch_size":      128,
+            "epsilon_end":     0.01,
+            "epsilon_decay":   0.10,
+            "total_timesteps": 500_000,
         },
     },
     {
-        "name": "Exp10_BestGuess",
+        "name": "Exp10_LowLR_BestGuess",
         "config_changes": {
-            "learning_rate": 5e-4,
-            "gamma":         0.995,
-            "batch_size":    64,
-            "epsilon_end":   0.05,
-            "epsilon_decay": 0.15,
-            "total_timesteps": 100_000,
+            "learning_rate":   1e-5,
+            "gamma":           0.95,
+            "batch_size":      64,
+            "epsilon_end":     0.01,
+            "epsilon_decay":   0.20,
+            "total_timesteps": 500_000,
         },
     },
 ]
@@ -319,10 +328,13 @@ def build_config(overrides: dict) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 # Train one experiment
 # ──────────────────────────────────────────────────────────────────────────────
-def train_one(name: str, cfg: dict, out_dir: str) -> dict:
+def train_one(name: str, cfg: dict, out_dir: str,
+              resume_path: str = None) -> dict:
     sep = "─" * 64
     print(f"\n{sep}")
     print(f"  {name}  |  {ENV_ID}  |  {cfg['policy']}")
+    if resume_path:
+        print(f"  RESUMING from: {resume_path}")
     print(sep)
     print(f"  lr={cfg['learning_rate']}  gamma={cfg['gamma']}  "
           f"batch={cfg['batch_size']}  n_envs={cfg['n_envs']}")
@@ -334,22 +346,36 @@ def train_one(name: str, cfg: dict, out_dir: str) -> dict:
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(MODELS_DIR, exist_ok=True)
 
-    env   = make_env(cfg["n_envs"])
-    model = DQN(
-        cfg["policy"], env,
-        learning_rate           = cfg["learning_rate"],
-        gamma                   = cfg["gamma"],
-        batch_size              = cfg["batch_size"],
-        exploration_initial_eps = cfg["epsilon_start"],
-        exploration_final_eps   = cfg["epsilon_end"],
-        exploration_fraction    = cfg["epsilon_decay"],
-        buffer_size             = cfg["buffer_size"],
-        learning_starts         = cfg["learning_starts"],
-        target_update_interval  = cfg["target_update"],
-        train_freq              = cfg["train_freq"],
-        optimize_memory_usage   = False,
-        verbose                 = 0,
-    )
+    env = make_env(cfg["n_envs"])
+
+    if resume_path and os.path.exists(resume_path):
+        # load existing weights and continue training from them
+        print(f"  Loading weights from {resume_path}...")
+        model = DQN.load(resume_path, env=env)
+        # override hyperparams that may have changed
+        model.learning_rate           = cfg["learning_rate"]
+        model.gamma                   = cfg["gamma"]
+        model.batch_size              = cfg["batch_size"]
+        model.exploration_final_eps   = cfg["epsilon_end"]
+        model.exploration_fraction    = cfg["epsilon_decay"]
+        print(f"  Weights loaded — continuing training for "
+              f"{cfg['total_timesteps']:,} more steps")
+    else:
+        model = DQN(
+            cfg["policy"], env,
+            learning_rate           = cfg["learning_rate"],
+            gamma                   = cfg["gamma"],
+            batch_size              = cfg["batch_size"],
+            exploration_initial_eps = cfg["epsilon_start"],
+            exploration_final_eps   = cfg["epsilon_end"],
+            exploration_fraction    = cfg["epsilon_decay"],
+            buffer_size             = cfg["buffer_size"],
+            learning_starts         = cfg["learning_starts"],
+            target_update_interval  = cfg["target_update"],
+            train_freq              = cfg["train_freq"],
+            optimize_memory_usage   = False,
+            verbose                 = 0,
+        )
 
     log_csv = os.path.join(out_dir, f"{name}_episodes.csv")
     cb = TrainCallback(cfg["total_timesteps"], log_csv,
@@ -492,6 +518,12 @@ def main():
                    help="Run a specific experiment by name")
     p.add_argument("--all",        action="store_true",
                    help="Run all experiments in EXPERIMENTS list")
+    p.add_argument("--resume",     default=None,
+                   help="Path to model zip to resume training from "
+                        "(e.g. dqn_best.zip or models/exp6_largebatch_cnnpolicy.zip)")
+    p.add_argument("--best",       action="store_true",
+                   help="Auto-resume from dqn_best.zip — "
+                        "further trains the best experiment")
     p.add_argument("--policy",     default="CnnPolicy",
                    choices=["CnnPolicy"])
     p.add_argument("--timesteps",  type=int,   default=None,
@@ -506,6 +538,24 @@ def main():
     p.add_argument("--save-freq",  type=int,   default=10_000, dest="save_freq")
     args = p.parse_args()
 
+    # --best flag: auto-detect best model path and experiment config
+    resume_path = args.resume
+    if args.best:
+        if os.path.exists(BEST_SCORE_F):
+            with open(BEST_SCORE_F) as f:
+                bs = json.load(f)
+            best_exp_name = bs.get("name", "")
+            resume_path   = BEST_MODEL
+            print(f"\n  --best flag: resuming from best experiment")
+            print(f"  Experiment : {best_exp_name}")
+            print(f"  Model      : {resume_path}")
+            print(f"  Score was  : {bs.get('mean_reward')}\n")
+            if not args.exp:
+                args.exp = best_exp_name
+        else:
+            print("  No best_score.json found — run experiments first.")
+            return
+
     tag     = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join("logs", tag)
     os.makedirs(out_dir, exist_ok=True)
@@ -517,6 +567,8 @@ def main():
     print(f"  Policy      : {args.policy}")
     print(f"  Actions     : Discrete(18)  — {len(ACTION_NAMES)} actions")
     print(f"  n_envs      : {args.n_envs}")
+    if resume_path:
+        print(f"  Resuming    : {resume_path}")
     print("=" * 64)
 
     results = []
@@ -529,7 +581,8 @@ def main():
             cfg["n_envs"]  = args.n_envs
             if args.timesteps:
                 cfg["total_timesteps"] = args.timesteps
-            result = train_one(exp["name"], cfg, out_dir)
+            result = train_one(exp["name"], cfg, out_dir,
+                               resume_path=resume_path)
             results.append(result)
 
         # save results JSON
@@ -572,7 +625,8 @@ def main():
         cfg["n_envs"] = args.n_envs
         if args.timesteps:
             cfg["total_timesteps"] = args.timesteps
-        result = train_one(exp["name"], cfg, out_dir)
+        result = train_one(exp["name"], cfg, out_dir,
+                           resume_path=resume_path)
         save_results_json([result], tag)
 
     else:
@@ -588,7 +642,8 @@ def main():
         overrides["policy"] = args.policy
 
         cfg    = build_config(overrides)
-        result = train_one("CLI_Run", cfg, out_dir)
+        result = train_one("CLI_Run", cfg, out_dir,
+                           resume_path=resume_path)
         save_results_json([result], tag)
 
 
