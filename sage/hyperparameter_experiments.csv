@@ -1,0 +1,11 @@
+exp_num,experiment,lr,gamma,batch_size,epsilon_start,epsilon_end,epsilon_decay,buffer_size,target_update,train_freq,learning_starts,timesteps,mean_reward,max_reward,last20_mean,episodes,time_s,notes
+1,Exp1_CNN_Baseline,0.00025,0.99,32,1.0,0.05,0.2,50000,1000,4,10000,200000,-22.14,-1.0,-19.55,92,1677.8,"Standard baseline — lr=2.5e-4, γ=0.99, batch=32, buf=50k"
+2,Exp2_LargeBuffer,0.00025,0.99,32,1.0,0.05,0.2,100000,1000,4,10000,200000,-20.18,-1.0,-19.2,87,1446.4,Large replay buffer (100k) — more diverse past experiences
+3,Exp3_SmallBuffer,0.00025,0.99,32,1.0,0.05,0.2,10000,1000,4,2000,200000,-22.96,-8.0,-20.35,93,1425.4,Small replay buffer (10k) — recency-biased learning
+4,Exp4_FrequentTargetUpdate,0.00025,0.99,32,1.0,0.05,0.2,50000,250,4,10000,200000,-22.46,-1.0,-18.6,97,1453.8,Target net updated every 250 steps (Kariza used 1000)
+5,Exp5_RareTargetUpdate,0.00025,0.99,32,1.0,0.05,0.2,50000,5000,4,10000,200000,-20.94,-1.0,-17.8,89,1427.3,Target net updated every 5000 steps — very stable targets
+6,Exp6_HighTrainFreq,0.0001,0.99,32,1.0,0.05,0.2,50000,1000,1,10000,200000,-22.98,-3.0,-21.6,112,5133.7,Train every env step (train_freq=1) — most updates per timestep
+7,Exp7_LateStart,0.00025,0.99,32,1.0,0.05,0.2,75000,1000,4,25000,200000,-20.5,1.0,-17.4,94,1281.1,learning_starts=25k — fill buffer with diverse plays first
+8,Exp8_ConservativeExplore,0.00025,0.99,32,1.0,0.15,0.4,75000,1000,4,10000,200000,-23.8,-19.0,-23.65,175,1421.0,"ε_end=0.15, decay over 40% of steps — sustained exploration"
+9,Exp9_FastConverge,0.0005,0.99,64,1.0,0.05,0.2,50000,500,2,10000,200000,-23.01,-8.0,-20.2,109,5698.9,"lr=5e-4, batch=64, target_update=500, train_freq=2"
+10,Exp10_BestCombo,0.0002,0.99,64,1.0,0.05,0.25,75000,1500,4,15000,200000,-22.01,-1.0,-18.15,95,21894.1,"lr=2e-4, batch=64, buf=75k, target=1500, eps_decay=0.25, start=15k"
