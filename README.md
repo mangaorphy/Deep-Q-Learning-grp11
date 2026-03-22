@@ -1,5 +1,13 @@
 # Deep Q-Learning (DQN) - Atari Tennis Experiments
 
+## Demo Video
+
+Watch a demo of the trained agent playing Atari Tennis:
+
+[![DQN Atari Tennis Demo](https://img.youtube.com/vi/vAPtx781yY0/0.jpg)](https://youtu.be/vAPtx781yY0)
+
+Or view directly: https://youtu.be/vAPtx781yY0
+
 ## Overview
 
 This project trains Deep Q-Network (DQN) agents to play Atari Tennis using both **CnnPolicy** and **MlpPolicy**, comparing their performance across different hyperparameter configurations.
@@ -250,4 +258,4 @@ Deep-Q-Learning-grp11/
 
 ---
 
-**Happy experimenting!** 
+**Happy experimenting!**
