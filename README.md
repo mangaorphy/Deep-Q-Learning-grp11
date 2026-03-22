@@ -6,7 +6,7 @@ Watch a demo of the trained agent playing Atari Tennis:
 
 [![DQN Atari Tennis Demo](https://img.youtube.com/vi/vAPtx781yY0/0.jpg)](https://youtu.be/RtmPA5HEkf0)
 
-Or view directly: https://youtu.be/vAPtx781yY0
+Or view directly: https://youtu.be/RtmPA5HEkf0
 
 ## Overview
 
