@@ -35,6 +35,8 @@ ENV_ID     = "ALE/Tennis-v5"
 BEST_MODEL = os.path.join(SAGE_DIR, "dqn_model.zip")
 MODELS_DIR = os.path.join(SAGE_DIR, "models")
 
+# Other student directories are evaluated dynamically below.
+
 
 def make_eval_env(seed: int = 0) -> VecFrameStack:
     """Single eval env — same preprocessing as training."""
@@ -174,11 +176,32 @@ def main():
             print("  Run train.py --all first.\n")
             return
 
-        model_files = sorted([
-            os.path.join(MODELS_DIR, f)
-            for f in os.listdir(MODELS_DIR)
-            if f.endswith(".zip")
-        ])
+        model_files = []
+        if os.path.isdir(MODELS_DIR):
+            model_files.extend(sorted([
+                os.path.join(MODELS_DIR, f)
+                for f in os.listdir(MODELS_DIR)
+                if f.endswith(".zip")
+            ]))
+
+        for student in ["kariza", "orpheus", "Emmanuel"]:
+            student_dir = os.path.join(SAGE_DIR, student)
+            student_models_dir = os.path.join(student_dir, "models")
+            
+            best = os.path.join(student_dir, "dqn_best.zip")
+            if os.path.exists(best):
+                model_files.append(best)
+
+            latest = os.path.join(student_dir, "dqn_latest.zip")
+            if os.path.exists(latest):
+                model_files.append(latest)
+
+            if os.path.isdir(student_models_dir):
+                model_files.extend(sorted([
+                    os.path.join(student_models_dir, f)
+                    for f in os.listdir(student_models_dir)
+                    if f.endswith(".zip")
+                ]))
 
         if not model_files:
             print(f"\n  No .zip models found in {MODELS_DIR}")

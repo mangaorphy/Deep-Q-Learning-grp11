@@ -46,6 +46,8 @@ MODELS_DIR = os.path.join(SAGE_DIR, "models")
 BEST_MODEL = os.path.join(SAGE_DIR, "dqn_model.zip")
 ENV_ID     = "ALE/Tennis-v5"
 
+ROOT_DIR   = os.path.dirname(SAGE_DIR)
+
 # ── Palette ───────────────────────────────────────────────────────────────────
 BG       = "#0a1628"
 BG2      = "#0f2040"
@@ -141,6 +143,27 @@ def discover_models() -> list[tuple[str, str]]:
                 if note:
                     label = f"{label}  —  {note}"
                 entries.append((label, os.path.join(MODELS_DIR, fname)))
+                
+    # ── Other Students' Models ──
+    for student in ["kariza", "orpheus", "Emmanuel"]:
+        student_dir = os.path.join(ROOT_DIR, student)
+        student_models_dir = os.path.join(student_dir, "models")
+        prefix = f"[{student.capitalize()}]"
+        
+        best = os.path.join(student_dir, "dqn_best.zip")
+        if os.path.exists(best):
+            entries.append((f"{prefix} ★ Best Model", best))
+            
+        latest = os.path.join(student_dir, "dqn_latest.zip")
+        if os.path.exists(latest):
+            entries.append((f"{prefix} Latest Model", latest))
+
+        if os.path.isdir(student_models_dir):
+            for fname in sorted(os.listdir(student_models_dir)):
+                if fname.endswith(".zip"):
+                    label = f"{prefix} {fname.replace('_cnnpolicy.zip', '').replace('_', ' ').title()}"
+                    entries.append((label, os.path.join(student_models_dir, fname)))
+                
     return entries
 
 
